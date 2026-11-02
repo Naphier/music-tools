@@ -132,9 +132,9 @@
 
     .toggle_switch {
         flex: none;
-        border: 2px solid #333;
+        border: 2px solid var(--body-color);
         border-radius: 4px;
-        background: #333;
+        background: var(--body-color);
         position: relative;
         font-weight: bold;
         font-size: 13px;
@@ -201,7 +201,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #666;
+        color: var(--text-muted);
         background: var(--body-background);
         font-size: 12px;
     }
@@ -255,3 +255,4 @@
     max-width: 20rem;
     margin-top: 0.5rem;
 }
+

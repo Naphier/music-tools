@@ -1,4 +1,4 @@
-# About Sightreading.training
+# About Napland Music Tools
 
 This site is a free way to practice [sight
 reading](https://en.wikipedia.org/wiki/Sight-reading) by playing randomly
@@ -7,7 +7,7 @@ Additionally, you'll find some other tools to help you with your ear and music
 theory in general.
 
 **This project is 100% free & open-source**, you can contribute to development
-on GitHub: <https://github.com/leafo/sightreading.training>
+on GitHub: [Napland Music Tools](https://github.com/leafo/sightreading.training)
 
 ## A Work In Progress
 
@@ -95,3 +95,4 @@ you're playing.
 ## Icon credits
 
 <a href="https://www.flaticon.com/free-icons/reset" title="reset icons">Reset icons created by Rahul Kaklotar - Flaticon</a>
+
