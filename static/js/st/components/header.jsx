@@ -5,6 +5,7 @@ import {Link, NavLink} from "react-router-dom"
 
 import {trigger} from "st/events"
 import MidiButton from "st/components/midi_button"
+import ThemePicker from "st/components/theme_picker"
 import {IconDownArrow} from "st/components/icons"
 
 import Lightbox from "st/components/lightbox"
@@ -191,8 +192,7 @@ export default class Header extends React.Component {
 
     return <div className={styles.header}>
       <Link to="/" className={styles.logo_link}>
-        <img className={styles.logo} src="/static/img/logo.svg" height="35" alt="" />
-        <img className={styles.logo_small} src="/static/img/logo-small.svg" height="35" alt="" />
+        <span className={styles.wordmark}>Napland <span>Music Tools</span></span>
       </Link>
 
       <SizedElement className={styles.user_links} onWidth={(w) => {
@@ -202,7 +202,9 @@ export default class Header extends React.Component {
       </SizedElement>
 
       {hideMidiButton ? null : this.renderMidiButton()}
+      <ThemePicker />
     </div>
 
   }
 }
+
