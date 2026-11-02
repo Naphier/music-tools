@@ -23,9 +23,9 @@
 .grid th.sixteenth { font-size: 10px; font-weight: 400; }
 .grid td { padding: 0; }
 .grid th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); width: 140px; min-width: 140px; padding-right: 6px; text-align: left; }
-.grid th button { width: 100%; text-align: left; background: #f0f0f6; color: #37374e; border-color: var(--border-color); min-height: 36px; }
-.grid .step { display: block; box-sizing: border-box; min-width: 36px; width: 36px; height: 36px; min-height: 36px; max-height: 36px; aspect-ratio: 1; padding: 0; background: #ededf3; color: var(--text-muted); border-color: #d7d7e2; border-radius: 4px; }
-.grid .step.active { background: #54547f; color: var(--surface); border-color: #414168; }
+.grid th button { width: 100%; text-align: left; background: var(--drum-label-background); color: var(--drum-label-color); border-color: var(--border-color); min-height: 36px; }
+.grid .step { display: block; box-sizing: border-box; min-width: 36px; width: 36px; height: 36px; min-height: 36px; max-height: 36px; aspect-ratio: 1; padding: 0; background: var(--drum-step-background); color: var(--text-muted); border-color: var(--drum-step-border); border-radius: 4px; }
+.grid .step.active { background: #54547f; color: white; border-color: #414168; }
 .grid .beat { box-shadow: -2px 0 var(--border-color); }
 .grid .playhead { background: #c9e9bc; }
 .grid .playhead .step { box-shadow: 0 0 0 2px #48863b; }
@@ -41,7 +41,7 @@
 .patternTools .iconButton { width: 33px; height: 33px; padding: 6px; }
 .patternTools .iconButton svg { width: 16.5px; height: 16.5px; }
 .nameDialog { box-sizing: border-box; width: 380px; max-width: calc(100vw - 32px); padding: 24px; border: 1px solid var(--border-color); border-radius: 10px; }
-.nameDialog::backdrop { background: rgb(0 0 0 / 35%); }
+.nameDialog::backdrop { background: var(--modal-backdrop); }
 .nameDialog h2 { margin: 0 0 16px; font-size: 20px; }
 .nameDialog label { display: flex; flex-direction: column; gap: 8px; }
 .nameDialog input { box-sizing: border-box; width: 100%; }

@@ -121,6 +121,11 @@ a {
     --text-muted: #666;
     --focus-color: #426ad1;
     --notation-filter: none;
+    --modal-backdrop: rgba(255, 255, 255, 0.8);
+    --drum-step-background: #ededf3;
+    --drum-step-border: #d7d7e2;
+    --drum-label-background: #f0f0f6;
+    --drum-label-color: #37374e;
 }
 :root[data-theme="dark"] {
     color-scheme: dark;
@@ -135,6 +140,11 @@ a {
     --focus-color: #b6bfff;
     --notation-filter: invert(1) hue-rotate(180deg);
     --error-color: #ff9292;
+    --modal-backdrop: rgba(0, 0, 0, 0.75);
+    --drum-step-background: #303440;
+    --drum-step-border: #555b6d;
+    --drum-label-background: #303440;
+    --drum-label-color: #e6e8f0;
 }
 input, select, textarea {
     color: var(--body-color);
