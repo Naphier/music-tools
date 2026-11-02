@@ -14,8 +14,8 @@
         opacity: 1.0;
     }
 
-    img {
-        opacity: 0.6;
+    .midi_label {
+        font-weight: bold;
         margin-right: 4px;
     }
 
