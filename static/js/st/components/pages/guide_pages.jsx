@@ -76,7 +76,7 @@ export class GuideContents extends React.PureComponent {
         }} />
         <section className={classNames(pageContainerStyles.page_container, styles.page_container)}>
           <a target="_blank"
-            href={`https://github.com/Naphier/music-tools/edit/master/static/guides/${this.props.pageSource}.md`}>
+            href={`https://github.com/Naphier/music-tools/edit/main/static/guides/${this.props.pageSource}.md`}>
               Edit this page on GitHub
           </a>
         </section>
