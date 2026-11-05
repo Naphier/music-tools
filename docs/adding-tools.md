@@ -1,4 +1,4 @@
-# Adding a tool to Sight Reading Trainer
+# Adding a tool to Napland Music Tools
 
 Use this playbook for a standalone instrument, practice aid, or exercise. The
 Drum Machine at `/drum-machine` is a complete frontend-only example.
