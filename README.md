@@ -1,14 +1,14 @@
-# Sight Reading Trainer
+# Napland Music Tools
 
-## <https://sightreading.training>
+## <https://music-tools.naplandgames.com>
 
-![test](https://github.com/leafo/sightreading.training/workflows/test/badge.svg)
+![test](https://github.com/Naphier/music-tools/workflows/test/badge.svg)
 
 [![Twitch Link](http://leafo.net/dump/twitch-banner.svg)](https://www.twitch.tv/moonscript)
 
 A tool for practicing sight reading, learning songs, and training other musical skills in your browser. The successor to <https://github.com/leafo/mursic>.
 
-Learn more on [the guide](https://sightreading.training/about).
+Learn more on [the guide](https://music-tools.naplandgames.com/about).
 
 ![screenshot](http://leafo.net/shotsnb/2016-05-14_16-30-55.png)
 
@@ -45,7 +45,7 @@ To test a pull-request branch without installing anything locally:
 3. If the preview is not running, run `bash dev/start_preview.sh` in the Codespaces terminal.
 4. When Codespaces forwards port 3000, select **Open in Browser**. If the
    notification is missed, open the **Ports** panel and use the globe icon next
-   to **Sight Reading Trainer**.
+   to **Napland Music Tools**.
 5. Visit `/flash-cards/note-math` on the forwarded HTTPS URL.
 
 The forwarded site runs in the codespace; only the browser is local. The
@@ -155,3 +155,7 @@ Press Space to start/stop playback when focus is outside interactive controls.
 
 Drum-set choices are saved with named patterns. Switching sets during playback
 keeps the beat running; loading a groove preset retains your selected set.
+
+## Upstream
+
+Music Tools builds on [leafo/sightreading.training](https://github.com/leafo/sightreading.training) by Leaf Corcoran. Original attribution is retained in the source.
