@@ -3,8 +3,10 @@ import {setTitle} from "st/globals"
 import {DRUM_KITS} from "st/drum_kits"
 import DrumAudio from "st/drum_audio"
 import Toast from "st/components/toast"
-import {TRACKS, PRESETS, STORAGE_KEY, emptyPattern, validatePattern, resizePattern, readSavedPatterns, TIME_SIGNATURES, meterFor, changeTimeSignature, stepMarker} from "st/drum_patterns"
+import {TRACKS, PRESETS, STORAGE_KEY, emptyPattern, validatePattern, resizePattern, readSavedPatterns, TIME_SIGNATURES, meterFor, changeTimeSignature, changeSubdivision, stepMarker} from "st/drum_patterns"
 import styles from "./drum_machine_page.module.css"
+
+const SESSION_KEY = "drum-machine:session:v1"
 
 const TAGLINES = ["Find you groove", "Groovy", "Tss tss tssss", "Boom chucka", "Bum dum..."]
 
@@ -57,7 +59,21 @@ export default class DrumMachinePage extends React.Component {
     let saved = [], message = ""
     try { saved = readSavedPatterns(window.localStorage) }
     catch { message = "Saved patterns could not be read. You can still create and play beats." }
-    this.state = {pattern: validatePattern(PRESETS[0].pattern), tempoInput: String(PRESETS[0].pattern.bpm), saved, selectedName: "", name: "My beat", dialogAction: null, dialogName: "", dialogError: "", muted: {}, volume: 0.7, playing: false, starting: false, currentStep: -1, message}
+    let pattern = validatePattern(PRESETS[0].pattern)
+    let selectedName = "", name = "My beat", muted = {}, volume = 0.7
+    try {
+      const session = JSON.parse(window.localStorage.getItem(SESSION_KEY))
+      if (session) {
+        pattern = validatePattern(session.pattern)
+        if (saved.some(item => item.name === session.selectedName)) selectedName = session.selectedName
+        if (typeof session.name === "string") name = session.name
+        muted = Object.fromEntries(TRACKS.map(([id]) => [id, session.muted?.[id] === true]))
+        if (Number.isFinite(session.volume) && session.volume >= 0 && session.volume <= 1) volume = session.volume
+      }
+    } catch {
+      // Start with defaults if the previous session is unavailable.
+    }
+    this.state = {pattern, tempoInput: String(pattern.bpm), saved, selectedName, name, dialogAction: null, dialogName: "", dialogError: "", muted, volume, playing: false, starting: false, currentStep: -1, message}
     this.tagline = TAGLINES[Math.floor(Math.random() * TAGLINES.length)]
     this.audio = new DrumAudio(currentStep => this.setState({currentStep}))
   }
@@ -73,6 +89,17 @@ export default class DrumMachinePage extends React.Component {
     setTitle("Drum Machine")
     window.addEventListener("keydown", this.handlePlaybackKey)
   }
+  componentDidUpdate(_previousProps, previous) {
+    const {pattern, selectedName, name, muted, volume} = this.state
+    if (pattern === previous.pattern && selectedName === previous.selectedName &&
+        name === previous.name && muted === previous.muted && volume === previous.volume) return
+    try {
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify({pattern, selectedName, name, muted, volume}))
+    } catch {
+      // The editor remains usable when browser storage is unavailable.
+    }
+  }
+
   componentWillUnmount() {
     this.unmounted = true
     window.removeEventListener("keydown", this.handlePlaybackKey)
@@ -85,7 +112,8 @@ export default class DrumMachinePage extends React.Component {
 
   changePattern(pattern) {
     const restart = (this.state.playing || this.state.starting) &&
-      (pattern.timeSignature !== this.state.pattern.timeSignature || pattern.bars !== this.state.pattern.bars)
+      (pattern.timeSignature !== this.state.pattern.timeSignature || pattern.bars !== this.state.pattern.bars ||
+        pattern.subdivision !== this.state.pattern.subdivision)
     if (restart) this.audio.stop()
     this.setState({pattern, tempoInput: String(pattern.bpm), ...(restart ? {playing: false, starting: false, currentStep: -1} : {})},
       () => { if (restart && !this.unmounted) this.togglePlayback() })
@@ -186,6 +214,7 @@ export default class DrumMachinePage extends React.Component {
     const {pattern, tempoInput, saved, selectedName, dialogAction, dialogName, dialogError, muted, volume, playing, starting, currentStep, message, notificationId} = this.state
     const meter = meterFor(pattern)
     const compound = pattern.timeSignature === "6/8"
+    const triplet = pattern.subdivision === "triplet"
     const steps = Array.from({length: pattern.bars * meter.steps}, (_, i) => i)
     return <main className={styles.page}>
       {dialogAction && <PatternNameDialog action={dialogAction} name={dialogName} error={dialogError}
@@ -224,10 +253,13 @@ export default class DrumMachinePage extends React.Component {
           <label>Time signature <select value={pattern.timeSignature} onChange={e => this.changePattern(changeTimeSignature(pattern, e.target.value))}>
             {Object.keys(TIME_SIGNATURES).map(signature => <option key={signature} value={signature}>{signature}</option>)}
           </select></label>
+          <label>Subdivision <select value={pattern.subdivision} onChange={e => this.changePattern(changeSubdivision(pattern, e.target.value))}>
+            <option value="straight">Straight</option><option value="triplet">Triplets</option>
+          </select></label>
           <label>Length <select value={pattern.bars} onChange={e => this.changePattern(resizePattern(pattern, Number(e.target.value)))}>
             <option value="1">1 bar</option><option value="2">2 bars</option>
           </select></label>
-          <label>Swing {Math.round(pattern.swing * 100)}%<input aria-label="Swing" title="Delays offbeat eighth notes (&). 0% is straight; 33% is a triplet shuffle." type="range" min="0" max="50" value={Math.round(pattern.swing * 100)}
+          <label>Swing {Math.round(pattern.swing * 100)}%<input aria-label="Swing" disabled={triplet} title="Delays offbeat eighth notes (&). 0% is straight; 33% is a triplet shuffle." type="range" min="0" max="50" value={Math.round(pattern.swing * 100)}
             onChange={e => this.changePattern({...pattern, swing: Number(e.target.value) / 100})} /></label>
           <label title="Volume"><DrumIcon name="volume" /><input aria-label="Volume" type="range" min="0" max="100" value={Math.round(volume * 100)} onChange={e => {
             const value = Number(e.target.value) / 100
@@ -237,9 +269,9 @@ export default class DrumMachinePage extends React.Component {
       </section>
       <section className={styles.panel} aria-label="Pattern editor">
         <div className={styles.sectionHeader}><h2>Just beat it</h2>
-          <button className={styles.iconButton} aria-label="Clear pattern" title="Clear pattern" onClick={() => this.changePattern({...emptyPattern(pattern.bars, pattern.timeSignature), kit: pattern.kit, bpm: pattern.bpm, swing: pattern.swing})}><DrumIcon name="trash" /></button>
+          <button className={styles.iconButton} aria-label="Clear pattern" title="Clear pattern" onClick={() => this.changePattern({...emptyPattern(pattern.bars, pattern.timeSignature, pattern.subdivision), kit: pattern.kit, bpm: pattern.bpm, swing: pattern.swing})}><DrumIcon name="trash" /></button>
         </div>
-        <p className={styles.help}>Toggle steps to add hits. Mute individual tracks with their names. Two bars repeat the first bar when extended. {compound && "6/8: six numbered beats, each with four subdivisions. BPM counts dotted quarters."}</p>
+        <p className={styles.help}>Toggle steps to add hits. Mute individual tracks with their names. Two bars repeat the first bar when extended. {compound && "6/8: six numbered eighth notes per bar. BPM counts dotted quarters."} {triplet && "Triplets are evenly spaced. Swing applies to straight steps."}</p>
         <div className={styles.scroll} tabIndex="0" aria-label="Scrollable drum steps">
           <table className={styles.grid}>
             <thead><tr><th scope="col">Instrument / mute</th>{steps.map(step => <th key={step} scope="col"

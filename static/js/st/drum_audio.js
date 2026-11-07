@@ -36,7 +36,7 @@ export default class DrumAudio {
           if (pattern.tracks[id][step] && !getMuted()[id]) this.hit(id, this.nextTime, pattern.kit)
         }
         this.pending.push({step, time: this.nextTime})
-        this.nextTime += stepDuration(pattern.bpm, pattern.swing, step, pattern.timeSignature)
+        this.nextTime += stepDuration(pattern.bpm, pattern.swing, step, pattern.timeSignature, pattern.subdivision)
         this.step++
       }
     }
