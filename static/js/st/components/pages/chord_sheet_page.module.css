@@ -1,0 +1,73 @@
+.page {
+  box-sizing: border-box;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px clamp(12px, 3vw, 24px) 64px;
+}
+
+.editor label {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.editor :is(input, textarea, button) {
+  min-height: 44px;
+  font: inherit;
+}
+
+.editor :is(input, textarea, button):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.preview {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid currentColor;
+  overflow-wrap: anywhere;
+}
+
+.line {
+  min-height: 1.4em;
+  font: 1rem/1.4 monospace;
+  break-inside: avoid;
+}
+
+.segment {
+  display: inline-flex;
+  max-width: 100%;
+  flex-direction: column;
+  vertical-align: bottom;
+  white-space: pre-wrap;
+}
+
+.segment strong {
+  padding-right: 0.5ch;
+}
+
+@media print {
+  :global(.page_layout):has(> .page) > :not(.page),
+  .page > :not(.preview) {
+    display: none !important;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+    color: black;
+    background: white;
+  }
+
+  .preview {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+}
