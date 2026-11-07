@@ -5,7 +5,7 @@ import {chordNote, guitarVoicing, identifyChords} from "st/chord_lab"
 import styles from "./chord_lab_page.module.css"
 
 const STRINGS = ["Low E", "A", "D", "G", "B", "High E"]
-const FRETS = Array.from({length: 25}, (_, fret) => fret)
+const FRETS = Array.from({length: 13}, (_, fret) => fret)
 const EXAMPLES = {
   "C major": [null, 3, 2, 0, 1, 0],
   "D minor": [null, null, 0, 2, 3, 1],
@@ -28,7 +28,7 @@ export default class ChordLabPage extends React.Component {
 
     return <main className={styles.page}>
       <h1>Chord Lab</h1>
-      <p>Choose a fret for each sounding string in standard tuning. Leave unused strings muted.</p>
+      <p>Choose an open string or fret 1–12 for each sounding string in standard tuning. Leave unused strings muted.</p>
 
       <div className={styles.strings}>
         {STRINGS.map((string, index) => <label key={string}>
