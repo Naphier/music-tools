@@ -1,4 +1,6 @@
 import SightReadingPage from "st/components/pages/sight_reading_page"
+import AccountPage from "st/components/pages/account_page"
+import {getSession} from "st/app"
 import LoginPage from "st/components/pages/login_page"
 import RegisterPage from "st/components/pages/register_page"
 import {guideRoutes} from "st/components/pages/guide_pages"
@@ -124,6 +126,10 @@ class Layout extends React.Component {
         <Route path="/staff2" element={<SightReadingPage useStaffTwo={true} {...pageProps} />} />
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/register" element={<RegisterPage/>} />
+        <Route path="/account" element={<AccountPage onSave={displayName => {
+          getSession().currentUser.displayName = displayName
+          this.forceUpdate()
+        }} />} />
 
         <Route path="/ear-training">
           <Route path="interval-melodies" element={<EarTrainingPage exercise="melody_recognition" {...pageProps} />} />
