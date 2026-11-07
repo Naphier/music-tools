@@ -1,4 +1,4 @@
-import {TRACKS, PRESETS, STORAGE_KEY, emptyPattern, validatePattern, resizePattern, readSavedPatterns, stepDuration, TIME_SIGNATURES, changeTimeSignature, stepMarker} from "st/drum_patterns"
+import {TRACKS, PRESETS, STORAGE_KEY, emptyPattern, validatePattern, resizePattern, readSavedPatterns, stepDuration, TIME_SIGNATURES, changeTimeSignature, changeSubdivision, meterFor, stepMarker} from "st/drum_patterns"
 import {DRUM_KITS, KIT_VOICES} from "st/drum_kits"
 import DrumAudio from "st/drum_audio"
 import Toast from "st/components/toast"
@@ -549,5 +549,57 @@ describe("Drum playback keyboard shortcut", () => {
     page.componentWillUnmount()
     expect(window.removeEventListener).toHaveBeenCalledWith("keydown", page.handlePlaybackKey)
     expect(page.audio.dispose).toHaveBeenCalled()
+  })
+})
+
+describe("Drum triplet subdivisions", () => {
+  it("preserves beat starts in both bars and round trips the triplet grid", () => {
+    const straight = emptyPattern(2)
+    straight.tracks.kick[4] = true
+    straight.tracks.kick[20] = true
+    const triplets = changeSubdivision(straight, "triplet")
+    expect(triplets.tracks.kick.length).toBe(24)
+    expect(triplets.tracks.kick[3]).toBeTrue()
+    expect(triplets.tracks.kick[15]).toBeTrue()
+    expect(stepMarker(triplets, 13).label).toBe("trip")
+    expect(validatePattern(triplets)).toEqual(triplets)
+    expect(changeSubdivision(triplets, "straight")).toEqual(straight)
+    delete straight.subdivision
+    expect(validatePattern(straight).subdivision).toBe("straight")
+  })
+
+  it("plays even triplets without changing the bar duration in any meter", () => {
+    for (const signature of Object.keys(TIME_SIGNATURES)) {
+      const meter = meterFor(emptyPattern(1, signature, "triplet"))
+      const durations = Array.from({length: meter.steps}, (_, i) => stepDuration(120, 0.5, i, signature, "triplet"))
+      expect(new Set(durations).size).toBe(1)
+      expect(durations.reduce((total, duration) => total + duration)).toBeCloseTo(
+        TIME_SIGNATURES[signature].steps * stepDuration(120, 0, 0, signature), 8)
+    }
+  })
+})
+
+describe("Drum Machine session", () => {
+  it("restores the working beat, mutes, and volume on return with playback stopped", () => {
+    const data = new Map()
+    spyOnProperty(window, "localStorage", "get").and.returnValue({
+      getItem: key => data.get(key) ?? null,
+      setItem: (key, value) => data.set(key, value)
+    })
+    const page = new DrumMachinePage({})
+    const previous = page.state
+    const pattern = emptyPattern(2, "3/4", "triplet")
+    pattern.bpm = 137
+    pattern.tracks.kick[10] = true
+    page.state = {...previous, pattern, volume: 0.35, muted: {snare: true}, playing: true}
+    page.componentDidUpdate({}, previous)
+
+    const restored = new DrumMachinePage({}).state
+    expect(restored.pattern).toEqual(pattern)
+    expect(restored.tempoInput).toBe("137")
+    expect(restored.muted.snare).toBeTrue()
+    expect(restored.volume).toBe(0.35)
+    expect(restored.playing).toBeFalse()
+    expect(restored.currentStep).toBe(-1)
   })
 })
