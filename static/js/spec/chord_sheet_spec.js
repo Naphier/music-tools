@@ -24,3 +24,23 @@ describe("Chord Sheet Maker", () => {
     expect(() => readChordSheet(JSON.stringify({...draft, source: "a".repeat(SHEET_SOURCE_LIMIT + 1)}))).toThrow()
   })
 })
+
+describe("chord sheet", function() {
+  it("keeps lyric placement, blank lines and consecutive chords", function() {
+    expect(parseChordSheet("Intro [C][G]go\r\n\r\nNext")).toEqual([
+      [{chord: "", lyric: "Intro "}, {chord: "C", lyric: ""}, {chord: "G", lyric: "go"}],
+      [{chord: "", lyric: ""}],
+      [{chord: "", lyric: "Next"}],
+    ])
+  })
+
+  it("transposes chord roots and basses while preserving qualities", function() {
+    expect(parseChordSheet("[B♭maj7/F][C6/9][N.C.]", -1)[0].map(cell => cell.chord))
+      .toEqual(["Amaj7/E", "B6/9", "N.C."])
+  })
+
+  it("supports flat spelling and preserves original spelling at zero", function() {
+    expect(parseChordSheet("[C/E]", 1, true)[0][0].chord).toBe("Db/F")
+    expect(parseChordSheet("[C♯/G♯]")[0][0].chord).toBe("C♯/G♯")
+  })
+})

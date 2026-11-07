@@ -8,7 +8,7 @@ import {
 import styles from "./chord_sheet_page.module.css"
 
 export default class ChordSheetPage extends React.Component {
-  state = {title: "", source: "", notice: "", noticeId: 0}
+  state = {title: "", source: "", notice: "", noticeId: 0, shift: 0, flats: false}
 
   componentDidMount() {
     setTitle("Chord Sheet Maker")
@@ -35,7 +35,7 @@ export default class ChordSheetPage extends React.Component {
   }
 
   render() {
-    const {title, source, notice, noticeId} = this.state
+    const {title, source, notice, noticeId, shift, flats} = this.state
 
     return <main className={styles.page}>
       <div className={styles.editor}>
@@ -51,8 +51,21 @@ export default class ChordSheetPage extends React.Component {
           <textarea value={source} maxLength={SHEET_SOURCE_LIMIT} rows={12}
             onChange={event => this.setState({source: event.target.value})} />
         </label>
-        <p>Saving replaces the single draft stored in this browser.</p>
+        <p>Saving replaces the single draft stored in this browser. Transposition applies to the preview and printout.</p>
         <div className={styles.actions}>
+          <label>Transpose
+            <select value={shift} onChange={event => this.setState({shift: Number(event.target.value)})}>
+              {Array.from({length: 25}, (_, index) => index - 12).map(steps =>
+                <option key={steps} value={steps}>{steps === 0 ? "Original key" :
+                  `${steps > 0 ? "+" : ""}${steps} semitones`}</option>)}
+            </select>
+          </label>
+          <label>Accidentals when transposed
+            <select value={flats ? "flats" : "sharps"} onChange={event => this.setState({flats: event.target.value === "flats"})}>
+              <option value="sharps">Sharps</option>
+              <option value="flats">Flats</option>
+            </select>
+          </label>
           <button type="button" onClick={() => this.save()}>Save draft</button>
           <button type="button" disabled={!source.trim()} onClick={() => window.print()}>
             Print / Save PDF
@@ -62,7 +75,7 @@ export default class ChordSheetPage extends React.Component {
 
       <section className={styles.preview} aria-label="Chord sheet preview">
         <h2>{title.trim() || "Untitled song"}</h2>
-        {source.trim() ? parseChordSheet(source).map((line, lineIndex) =>
+        {source.trim() ? parseChordSheet(source, shift, flats).map((line, lineIndex) =>
           <div className={styles.line} key={lineIndex}>
             {line.map(({chord, lyric}, segmentIndex) => <span className={styles.segment} key={segmentIndex}>
               {chord && <strong>{chord}</strong>}

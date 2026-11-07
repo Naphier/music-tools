@@ -11,12 +11,12 @@
   margin-top: 12px;
 }
 
-.editor :is(input, textarea, button) {
+.editor :is(input, textarea, select, button) {
   min-height: 44px;
   font: inherit;
 }
 
-.editor :is(input, textarea, button):focus-visible {
+.editor :is(input, textarea, select, button):focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
@@ -24,6 +24,7 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: end;
   gap: 12px;
 }
 
