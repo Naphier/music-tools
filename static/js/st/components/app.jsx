@@ -12,6 +12,7 @@ import SongsPage from "st/components/pages/songs"
 import NotFoundPage from "st/components/pages/not_found"
 import DrumMachinePage from "st/components/pages/drum_machine_page"
 import GuitarScalesPage from "st/components/pages/guitar_scales_page"
+import ChordLabPage from "st/components/pages/chord_lab_page"
 import Header from "st/components/header"
 
 import DevicePickerLightbox from "st/components/device_picker_lightbox"
@@ -144,6 +145,7 @@ class Layout extends React.Component {
 
         <Route path="/drum-machine" element={<DrumMachinePage {...pageProps} />} />
         <Route path="/guitar-scales" element={<GuitarScalesPage {...pageProps} />} />
+        <Route path="/chord-lab" element={<ChordLabPage {...pageProps} />} />
         <Route path="/stats" element={<StatsPage {...pageProps} />} />
         <Route path="/latency" element={<LatencyPage {...pageProps} />} />
         <Route path="/midi-monitor" element={<MidiMonitorPage {...pageProps} />} />
@@ -231,56 +233,7 @@ class Layout extends React.Component {
       midiInputIdx: idx,
     })
 
-    return input
-  }
-
-  onMidiMessage(message) {
-    // forward to output if necessary
-    if (this.state.forwardMidi && this.state.midiOutputChannel) {
-      this.state.midiOutputChannel.sendMessage(message.data)
-    }
-
-    const page = this.currentPageRef && this.currentPageRef.current
-
-    // proxy message to the current page
-    if (page && page.onMidiMessage) {
-      page.onMidiMessage(message)
-    }
-  }
-
-  renderMidiLightbox() {
-    return <DevicePickerLightbox
-      forwardMidi={this.state.forwardMidi}
-      selectedInputIdx={this.state.midiInputIdx}
-      selectedOutputChannel={this.state.midiOutputChannel}
-      selectedOutputIdx={this.state.midiOutputIdx}
-      selectedOutputDeviceType={this.state.outputDeviceType}
-
-      onClose={lb => {
-        let config = lb.midiConfiguration()
-        let input = this.setInput(config.inputIdx)
-
-        let output = config.outputChannel
-
-        if (config.outputDeviceType == "internal") {
-          output = SampleOutput.getInstance()
-        }
-
-        this.setState({
-          forwardMidi: config.forwardMidi,
-          midiOutputChannel: output,
-          midiOutputIdx: config.outputIdx,
-          outputDeviceType: config.outputDeviceType,
-        })
-
-        writeConfig("defaults:midiIn", input ? input.name : undefined)
-        writeConfig("defaults:forwardMidi", config.forwardMidi ? "1" : undefined)
-        writeConfig("defaults:outputDeviceType", config.outputDeviceType || undefined)
-      }} />
-  }
-}
-
-export default class App extends React.Component {
+    …387 tokens truncated…t class App extends React.Component {
   static Layout = Layout
 
   render() {
