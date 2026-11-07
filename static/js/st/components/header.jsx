@@ -165,6 +165,7 @@ export default class Header extends React.Component {
       <NavLink end key="flash-cards" to="/flash-cards/note-math" {...toggleActive}>Flash Cards</NavLink>,
       <NavLink key="play-along" to="/play-along" {...toggleActive}>Play Along</NavLink>,
       <NavLink key="drum-machine" to="/drum-machine" {...toggleActive}>Drum Machine</NavLink>,
+      <NavLink key="guitar-scales" to="/guitar-scales" {...toggleActive}>Guitar Scales</NavLink>,
       <NavLink end key="about" to="/about" {...toggleActive}>Guide</NavLink>,
     ]
 
@@ -187,7 +188,7 @@ export default class Header extends React.Component {
 
   render() {
     let userPanel = null
-    let enableDropdown = this.state.width && this.state.width < 700
+    let enableDropdown = this.state.width && this.state.width < 850
     let hideMidiButton = !this.state.width || this.state.width < 450
 
     return <div className={styles.header}>
