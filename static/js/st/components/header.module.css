@@ -17,6 +17,7 @@
 
     .user_links {
         flex: 1;
+        min-width: 0;
         display: flex;
         align-items: center;
         gap: 20px;
@@ -127,6 +128,7 @@
     .right_section {
         text-align: right;
         flex: 1;
+        min-width: 0;
     }
 
     .logo, .logo_small {
