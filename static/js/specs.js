@@ -16,4 +16,7 @@ import "spec/practice_timer_spec"
 
 import "spec/guitar_scales_spec"
 import "spec/chord_lab_spec"
+
+import "spec/share_stats_spec"
+
 import "spec/chord_sheet_spec"

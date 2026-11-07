@@ -50,3 +50,4 @@
 @media (max-width: 800px) { .heading { align-items: flex-start; flex-direction: column; } .patternManager { align-self: flex-end; } }
 @media (max-width: 450px) { .page { padding: 20px 10px; } .panel { padding: 12px; } .presets { grid-template-columns: repeat(2, 1fr); } }
 
+.floatingToggle { margin-top: 8px; }
