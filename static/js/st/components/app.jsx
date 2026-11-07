@@ -17,14 +17,13 @@ import DevicePickerLightbox from "st/components/device_picker_lightbox"
 
 import {dispatch, trigger} from "st/events"
 import {readConfig, writeConfig} from "st/config"
-import {csrfToken} from "st/globals"
+import {postAuth, completeAuth} from "st/auth"
+import Toast from "st/components/toast"
 
 import * as React from "react"
 import {BrowserRouter, Route, Routes, Navigate} from "react-router-dom"
 
 import {SampleOutput} from "st/sample_output"
-
-import {init as initApp} from "st/app"
 
 class Layout extends React.Component {
   constructor(props) {
@@ -155,6 +154,8 @@ class Layout extends React.Component {
       </Routes>
 
       {this.renderCurrentLightbox()}
+      <Toast message={this.state.authError} notificationId={this.state.authErrorId}
+        onDismiss={() => this.setState({authError: null})} />
     </div>
   }
 
@@ -169,16 +170,20 @@ class Layout extends React.Component {
     return lb
   }
 
-  doLogout() {
-    let request = new XMLHttpRequest()
-    request.open("POST", "/logout.json")
-    let data = new FormData()
-    data.append("csrf_token", csrfToken())
-    request.send(data)
-
-    request.onload = (e) => {
-      let res = JSON.parse(request.responseText)
-      initApp(res)
+  async doLogout(event) {
+    event?.preventDefault()
+    if (this.loggingOut) return
+    this.loggingOut = true
+    try {
+      const result = await postAuth("/logout.json")
+      if (!completeAuth(result)) throw new Error("Logout failed")
+    } catch (error) {
+      this.setState(state => ({
+        authError: "Could not log out. Refresh the page and try again.",
+        authErrorId: (state.authErrorId || 0) + 1,
+      }))
+    } finally {
+      this.loggingOut = false
     }
   }
 
