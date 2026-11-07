@@ -2,12 +2,18 @@ import * as React from "react"
 import {createPortal} from "react-dom"
 import {setTitle} from "st/globals"
 import {DRUM_KITS} from "st/drum_kits"
-import DrumAudio from "st/drum_audio"
+import DrumAudio, {MAX_DRUM_VOLUME} from "st/drum_audio"
 import Toast from "st/components/toast"
 import {TRACKS, PRESETS, STORAGE_KEY, emptyPattern, validatePattern, resizePattern, readSavedPatterns, TIME_SIGNATURES, meterFor, changeTimeSignature, changeSubdivision, stepMarker} from "st/drum_patterns"
 import styles from "./drum_machine_page.module.css"
 
 const SESSION_KEY = "drum-machine:session:v1"
+
+const VOLUME_KEY = "drum-machine:volume"
+
+function isDrumVolume(value) {
+  return Number.isFinite(value) && value >= 0 && value <= MAX_DRUM_VOLUME
+}
 
 const TAGLINES = ["Find you groove", "Groovy", "Tss tss tssss", "Boom chucka", "Bum dum..."]
 
@@ -65,14 +71,20 @@ export default class DrumMachinePage extends React.Component {
     try {
       const session = JSON.parse(window.localStorage.getItem(SESSION_KEY))
       if (session) {
+        if (isDrumVolume(session.volume)) volume = session.volume
         pattern = validatePattern(session.pattern)
         if (saved.some(item => item.name === session.selectedName)) selectedName = session.selectedName
         if (typeof session.name === "string") name = session.name
         muted = Object.fromEntries(TRACKS.map(([id]) => [id, session.muted?.[id] === true]))
-        if (Number.isFinite(session.volume) && session.volume >= 0 && session.volume <= 1) volume = session.volume
       }
     } catch {
       // Start with defaults if the previous session is unavailable.
+    }
+    try {
+      const storedVolume = JSON.parse(window.localStorage.getItem(VOLUME_KEY))
+      if (isDrumVolume(storedVolume)) volume = storedVolume
+    } catch {
+      // Keep the legacy session value or default if the preference is unavailable.
     }
     this.state = {pattern, tempoInput: String(pattern.bpm), saved, selectedName, name, dialogAction: null, dialogName: "", dialogError: "", muted, volume, playing: false, starting: false, currentStep: -1, message}
     this.tagline = TAGLINES[Math.floor(Math.random() * TAGLINES.length)]
@@ -138,6 +150,16 @@ export default class DrumMachinePage extends React.Component {
     if (!event.repeat) this.togglePlayback()
   }
 
+  changeVolume(value) {
+    this.setState({volume: value})
+    this.audio.setVolume(value)
+    try {
+      window.localStorage.setItem(VOLUME_KEY, JSON.stringify(value))
+    } catch {
+      // Volume remains adjustable when browser storage is unavailable.
+    }
+  }
+
   componentDidMount() {
     setTitle("Drum Machine")
     window.addEventListener("keydown", this.handlePlaybackKey)
@@ -196,7 +218,7 @@ export default class DrumMachinePage extends React.Component {
     }
     this.setState({starting: true, message: ""})
     try {
-      const started = await this.audio.start(() => this.state.pattern, () => this.state.muted, this.state.volume)
+      const started = await this.audio.start(() => this.state.pattern, () => this.state.muted, () => this.state.volume)
       if (started && !this.unmounted) this.setState({playing: true, starting: false})
     } catch {
       this.audio.stop()
@@ -315,10 +337,10 @@ export default class DrumMachinePage extends React.Component {
           </select></label>
           <label>Swing {Math.round(pattern.swing * 100)}%<input aria-label="Swing" disabled={triplet} title="Delays offbeat eighth notes (&). 0% is straight; 33% is a triplet shuffle." type="range" min="0" max="50" value={Math.round(pattern.swing * 100)}
             onChange={e => this.changePattern({...pattern, swing: Number(e.target.value) / 100})} /></label>
-          <label title="Volume"><DrumIcon name="volume" /><input aria-label="Volume" type="range" min="0" max="100" value={Math.round(volume * 100)} onChange={e => {
-            const value = Number(e.target.value) / 100
-            this.setState({volume: value}); this.audio.setVolume(value)
-          }} /></label>
+          <label><DrumIcon name="volume" /> {Math.round(volume * 100)}%
+            <input aria-label="Volume" aria-valuetext={`${Math.round(volume * 100)} percent`} type="range" min="0" max={MAX_DRUM_VOLUME * 100}
+              value={Math.round(volume * 100)} onChange={e => this.changeVolume(Number(e.target.value) / 100)} />
+          </label>
         </div>
       </section>
       <section className={styles.panel} aria-label="Pattern editor">
