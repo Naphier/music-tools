@@ -233,7 +233,56 @@ class Layout extends React.Component {
       midiInputIdx: idx,
     })
 
-    …387 tokens truncated…t class App extends React.Component {
+    return input
+  }
+
+  onMidiMessage(message) {
+    // forward to output if necessary
+    if (this.state.forwardMidi && this.state.midiOutputChannel) {
+      this.state.midiOutputChannel.sendMessage(message.data)
+    }
+
+    const page = this.currentPageRef && this.currentPageRef.current
+
+    // proxy message to the current page
+    if (page && page.onMidiMessage) {
+      page.onMidiMessage(message)
+    }
+  }
+
+  renderMidiLightbox() {
+    return <DevicePickerLightbox
+      forwardMidi={this.state.forwardMidi}
+      selectedInputIdx={this.state.midiInputIdx}
+      selectedOutputChannel={this.state.midiOutputChannel}
+      selectedOutputIdx={this.state.midiOutputIdx}
+      selectedOutputDeviceType={this.state.outputDeviceType}
+
+      onClose={lb => {
+        let config = lb.midiConfiguration()
+        let input = this.setInput(config.inputIdx)
+
+        let output = config.outputChannel
+
+        if (config.outputDeviceType == "internal") {
+          output = SampleOutput.getInstance()
+        }
+
+        this.setState({
+          forwardMidi: config.forwardMidi,
+          midiOutputChannel: output,
+          midiOutputIdx: config.outputIdx,
+          outputDeviceType: config.outputDeviceType,
+        })
+
+        writeConfig("defaults:midiIn", input ? input.name : undefined)
+        writeConfig("defaults:forwardMidi", config.forwardMidi ? "1" : undefined)
+        writeConfig("defaults:outputDeviceType", config.outputDeviceType || undefined)
+      }} />
+  }
+}
+
+export default class App extends React.Component {
   static Layout = Layout
 
   render() {
