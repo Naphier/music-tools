@@ -19,6 +19,7 @@ import {dispatch, trigger} from "st/events"
 import {readConfig, writeConfig} from "st/config"
 import {postAuth, completeAuth} from "st/auth"
 import Toast from "st/components/toast"
+import PracticeTimer from "st/components/practice_timer"
 
 import * as React from "react"
 import {BrowserRouter, Route, Routes, Navigate} from "react-router-dom"
@@ -153,6 +154,7 @@ class Layout extends React.Component {
         <Route path="*" element={<NotFoundPage/>} />
       </Routes>
 
+      <PracticeTimer />
       {this.renderCurrentLightbox()}
       <Toast message={this.state.authError} notificationId={this.state.authErrorId}
         onDismiss={() => this.setState({authError: null})} />
