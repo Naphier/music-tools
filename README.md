@@ -103,6 +103,12 @@ Mode, Speed and keyboard visibility, then reloading. Build a streak, miss a note
 and verify Last Streak stays visible through more misses. Reset should zero the
 session counters. Account sync and account Stats need a backend-enabled deployment.
 
+## Authentication sessions
+
+Login, registration and logout refresh the session CSRF token before submitting. Successful authentication loads a fresh page so trainer preferences and statistics start with the current account. Failed logout keeps the current account visible and reports the error. Session-bound HTML and JSON responses use `Cache-Control: no-store`.
+
+Run the authentication transport regressions with `npm run test_auth`; the backend CI also exercises a cookie-preserving login/logout/account-switch sequence.
+
 ## Full-backend production runtime
 
 Production requires `SR_STAGE` (`dev` or `prd`), `SR_PUBLIC_URL` (an HTTPS origin
