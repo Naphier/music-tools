@@ -234,7 +234,7 @@ export default class DrumMachinePage extends React.Component {
             <button type="button" className={styles.iconButton} aria-label="New pattern" title="Save current beat as a new pattern" onClick={() => this.newPattern()}><DrumIcon name="plus" /></button>
             <button type="button" className={styles.iconButton} aria-label="Delete saved pattern" title="Delete selected saved pattern" disabled={!selectedName} onClick={() => this.deleteSelected()}><DrumIcon name="trash" /></button>
           </div>
-          <small title="Patterns currently save on this browser; account syncing is not available yet."><a href="/login">Login</a>/<a href="/register">Register</a> to cloud save</small>
+          <small>Patterns are saved in this browser.</small>
         </section>
       </header>
       <Toast message={message} notificationId={notificationId} onDismiss={() => this.setState({message: ""})} />

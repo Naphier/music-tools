@@ -9,6 +9,7 @@ import Keyboard from "st/components/keyboard"
 import StatsLightbox from "st/components/sight_reading/stats_lightbox"
 import Hotkeys from "st/components/hotkeys"
 import IconReset from "st/components/reset_icon"
+import Toast from "st/components/toast"
 import BuildInfo from "st/components/build_info"
 
 import styles from "./sight_reading_page.module.css"
@@ -54,7 +55,12 @@ export default class SightReadingPage extends React.Component {
 
     const session = getSession()
     this.preferenceStore = new TrainerPreferenceStore(session.currentUser, status => {
-      if (this.mounted) this.setState({preferenceStatus: status})
+      if (this.mounted) {
+        this.setState(state => ({
+          preferenceStatus: status,
+          preferenceNotificationId: (state.preferenceNotificationId || 0) + 1
+        }))
+      }
     })
 
     this.state = {
@@ -533,7 +539,13 @@ export default class SightReadingPage extends React.Component {
 
   resetStats() {
     this.state.stats.reset()
-    this.forceUpdate()
+    if (this.state.mode === "scroll") {
+      this.setState({heldNotes: {}, touchedNotes: {}, noteShaking: false})
+      this.enterScrollMode()
+      this.refreshNoteList()
+    } else {
+      this.forceUpdate()
+    }
   }
 
   openStatsLightbox() {
@@ -553,6 +565,10 @@ export default class SightReadingPage extends React.Component {
         [styles.scroll_mode]: this.state.mode == "scroll",
         [styles.wait_mode]: this.state.mode == "wait",
     })}>
+      <Toast
+        message={this.state.preferenceStatus}
+        notificationId={this.state.preferenceNotificationId}
+        onDismiss={() => this.setState({preferenceStatus: null})} />
       {this.renderWorkspace()}
       {this.renderKeyboard()}
 
@@ -646,7 +662,6 @@ export default class SightReadingPage extends React.Component {
         </button>
         {" "}
         {fullscreenButton}
-        {this.state.preferenceStatus && <small role="status" className={styles.preference_status}>{this.state.preferenceStatus}</small>}
       </div>
 
       <div className={styles.stats}>
