@@ -28,6 +28,7 @@
 
 .fretboard {
   width: 100%;
+  margin-bottom: 20px;
   table-layout: fixed;
   border-collapse: collapse;
   text-align: center;

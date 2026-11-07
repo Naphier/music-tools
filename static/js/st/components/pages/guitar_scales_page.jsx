@@ -9,16 +9,21 @@ function displayNote(note) {
 }
 
 export default class GuitarScalesPage extends React.Component {
-  state = {root: "A", type: "Minor pentatonic", firstFret: 5}
+  state = {root: "A", type: "Minor pentatonic", lastFret: 12}
 
   componentDidMount() {
     setTitle("Guitar Scales")
   }
 
   render() {
-    const {root, type, firstFret} = this.state
-    const {notes, frets, strings} = guitarScale(root, type, firstFret)
+    const {root, type, lastFret} = this.state
+    const {notes, frets, strings} = guitarScale(root, type, lastFret)
     const scaleName = `${displayNote(root)} ${type.toLowerCase()}`
+
+    const sections = [frets.slice(0, 7)]
+    for (let start = 7; start <= lastFret; start += 6) {
+      sections.push(frets.slice(start, start + 6))
+    }
 
     return <main className={styles.page}>
       <h1>Guitar Scales</h1>
@@ -34,33 +39,37 @@ export default class GuitarScalesPage extends React.Component {
             {Object.keys(SCALE_TYPES).map(name => <option key={name}>{name}</option>)}
           </select>
         </label>
-        <label>Frets
-          <select value={firstFret} onChange={event => this.setState({firstFret: Number(event.target.value)})}>
-            {[0, 5, 10, 15, 19].map(fret =>
-              <option key={fret} value={fret}>{fret}–{fret + 5}</option>)}
+        <label>Show frets
+          <select value={lastFret} onChange={event => this.setState({lastFret: Number(event.target.value)})}>
+            {[12, 18, 24].map(fret =>
+              <option key={fret} value={fret}>0–{fret}</option>)}
           </select>
         </label>
       </div>
       <p aria-live="polite"><strong>{scaleName}</strong> · {notes.map(note => displayNote(note.name)).join(" · ")}</p>
-      <table className={styles.fretboard}>
-        <caption>Fretboard · ★ marks the root · Fret 0 is the open string</caption>
+      <p>★ marks the root. Fret 0 is the open string.</p>
+      {sections.map(section => <table key={section[0]} className={styles.fretboard}>
+        <caption>Frets {section[0]}–{section.at(-1)}</caption>
         <thead>
           <tr>
             <th scope="col">String</th>
-            {frets.map(fret => <th scope="col" key={fret}>{fret}</th>)}
+            {section.map(fret => <th scope="col" key={fret}>{fret}</th>)}
           </tr>
         </thead>
         <tbody>
           {strings.map(string => <tr key={string.number}>
             <th scope="row">{string.number} · {string.name}</th>
-            {string.cells.map((note, index) => <td key={frets[index]}>
-              {note && (note.degree === 1
-                ? <strong className={styles.root}>{displayNote(note.name)} ★</strong>
-                : displayNote(note.name))}
-            </td>)}
+            {section.map(fret => {
+              const note = string.cells[fret]
+              return <td key={fret}>
+                {note && (note.degree === 1
+                  ? <strong className={styles.root}>{displayNote(note.name)} ★</strong>
+                  : displayNote(note.name))}
+              </td>
+            })}
           </tr>)}
         </tbody>
-      </table>
+      </table>)}
     </main>
   }
 }
