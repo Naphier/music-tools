@@ -14,32 +14,53 @@ export const TIME_SIGNATURES = {
   "6/8": {steps: 24, beatSteps: 4, tempoSteps: 12}
 }
 
-export function meterFor(pattern) { return TIME_SIGNATURES[pattern.timeSignature || "4/4"] }
-
-export function emptyPattern(bars = 1, timeSignature = "4/4") {
-  return {bars, timeSignature, kit: "classic", bpm: 100, swing: 0, tracks: Object.fromEntries(TRACKS.map(([id]) => [id, Array(bars * TIME_SIGNATURES[timeSignature].steps).fill(false)]))}
+export function meterFor(pattern) {
+  const meter = TIME_SIGNATURES[pattern.timeSignature || "4/4"]
+  if (pattern.subdivision !== "triplet") return meter
+  return {steps: meter.steps / 4 * 3, beatSteps: 3, tempoSteps: (meter.tempoSteps || 4) / 4 * 3}
 }
 
-// Keep each bar's existing hits; newly added beats start silent.
+export function emptyPattern(bars = 1, timeSignature = "4/4", subdivision = "straight") {
+  const grid = {bars, timeSignature, subdivision}
+  return {...grid, kit: "classic", bpm: 100, swing: 0, tracks: Object.fromEntries(TRACKS.map(([id]) => [id, Array(bars * meterFor(grid).steps).fill(false)]))}
+}
+
 export function changeTimeSignature(pattern, timeSignature) {
-  const next = {...pattern, timeSignature, tracks: {}}
-  const oldSteps = meterFor(pattern).steps
-  const newSteps = TIME_SIGNATURES[timeSignature].steps
+  return changeGrid(pattern, {...pattern, timeSignature})
+}
+
+export function changeSubdivision(pattern, subdivision) {
+  return changeGrid(pattern, {...pattern, subdivision})
+}
+
+function changeGrid(pattern, next) {
+  const oldMeter = meterFor(pattern)
+  const newMeter = meterFor(next)
+  const tracks = {}
   for (const [id] of TRACKS) {
-    next.tracks[id] = Array.from({length: pattern.bars * newSteps}, (_, i) => {
-      const step = i % newSteps
-      return step < oldSteps ? pattern.tracks[id][Math.floor(i / newSteps) * oldSteps + step] : false
+    tracks[id] = Array(next.bars * newMeter.steps).fill(false)
+    pattern.tracks[id].forEach((hit, index) => {
+      if (!hit) return
+      const bar = Math.floor(index / oldMeter.steps)
+      const local = index % oldMeter.steps
+      const beat = Math.floor(local / oldMeter.beatSteps)
+      const offset = Math.min(newMeter.beatSteps - 1,
+        Math.round(local % oldMeter.beatSteps * newMeter.beatSteps / oldMeter.beatSteps))
+      const step = beat * newMeter.beatSteps + offset
+      if (step < newMeter.steps) tracks[id][bar * newMeter.steps + step] = true
     })
   }
-  return next
+  return {...next, tracks}
 }
 
 export function stepMarker(pattern, step) {
   const {steps, beatSteps} = meterFor(pattern)
   const local = step % steps
   const bar = Math.floor(step / steps) + 1
-  return {label: local % 4 === 0 ? `${bar}.${local / 4 + 1}` : ["", "e", "&", "a"][local % 4],
-    size: local % 4 === 0 ? "quarter" : local % 2 === 0 ? "eighth" : "sixteenth"}
+  const offset = local % beatSteps
+  const subdivisions = beatSteps === 3 ? ["", "trip", "let"] : ["", "e", "&", "a"]
+  return {label: offset === 0 ? `${bar}.${Math.floor(local / beatSteps) + 1}` : subdivisions[offset],
+    size: offset === 0 ? "quarter" : beatSteps === 4 && offset === 2 ? "eighth" : "sixteenth"}
 }
 
 export function validatePattern(value) {
@@ -47,7 +68,9 @@ export function validatePattern(value) {
       !Number.isFinite(value.swing) || value.swing < 0 || value.swing > 0.5) throw new Error("Invalid drum pattern")
   const timeSignature = value.timeSignature === undefined ? "4/4" : value.timeSignature
   if (typeof timeSignature !== "string" || !Object.hasOwn(TIME_SIGNATURES, timeSignature)) throw new Error("Invalid time signature")
-  const pattern = emptyPattern(value.bars, timeSignature)
+  const subdivision = value.subdivision === undefined ? "straight" : value.subdivision
+  if (!["straight", "triplet"].includes(subdivision)) throw new Error("Invalid subdivision")
+  const pattern = emptyPattern(value.bars, timeSignature, subdivision)
   const kit = value.kit === undefined ? "classic" : value.kit
   if (!DRUM_KITS.some(item => item.id === kit)) throw new Error("Invalid drum kit")
   pattern.kit = kit
@@ -55,7 +78,7 @@ export function validatePattern(value) {
   pattern.swing = value.swing
   for (const [id] of TRACKS) {
     const steps = value.tracks?.[id]
-    const legacySixEight = timeSignature === "6/8" && Array.isArray(steps) && steps.length === value.bars * 12
+    const legacySixEight = subdivision === "straight" && timeSignature === "6/8" && Array.isArray(steps) && steps.length === value.bars * 12
     if (!Array.isArray(steps) || (!legacySixEight && steps.length !== value.bars * meterFor(pattern).steps) || steps.some(step => typeof step !== "boolean")) {
       throw new Error("Invalid drum steps")
     }
@@ -74,7 +97,8 @@ export function resizePattern(pattern, bars) {
 
 // Swing delays the offbeat eighth (&), keeping sixteenths evenly spaced
 // within each eighth. Each quarter note retains its original duration.
-export function stepDuration(bpm, swing, step, timeSignature = "4/4") {
+export function stepDuration(bpm, swing, step, timeSignature = "4/4", subdivision = "straight") {
+  if (subdivision === "triplet") return 60 / bpm / meterFor({timeSignature, subdivision}).tempoSteps
   // In 6/8 each of the six eighth-note counts has four subdivisions.
   const subdivisions = timeSignature === "6/8" ? 12 : 4
   return 60 / bpm / subdivisions * (step % 4 < 2 ? 1 + swing : 1 - swing)
