@@ -38,7 +38,10 @@ export function readSongbook(storage) {
     return draft === null ? [] : [{...readChordSheet(draft), id: "legacy", shift: 0, flats: false}]
   }
 
-  const sheets = JSON.parse(saved)
+  return validateSongbook(JSON.parse(saved))
+}
+
+function validateSongbook(sheets) {
   if (!Array.isArray(sheets)) throw new Error("Invalid songbook")
   const ids = new Set()
   return sheets.map(sheet => {
@@ -51,6 +54,37 @@ export function readSongbook(storage) {
     ids.add(id)
     return {...draft, id, shift, flats}
   })
+}
+
+export const SONGBOOK_BACKUP_SIZE_LIMIT = 32 * 1024 * 1024
+
+export function exportSongbook(sheets) {
+  return JSON.stringify({version: 1, sheets: validateSongbook(sheets)})
+}
+
+export function importSongbook(value, existing, createId) {
+  const backup = JSON.parse(value)
+  if (backup?.version !== 1) throw new Error("Unsupported songbook backup")
+  const incoming = validateSongbook(backup.sheets)
+  const sheets = [...existing]
+  const usedIds = new Set([...existing, ...incoming].map(sheet => sheet.id))
+  const contentKey = ({title, source, shift, flats}) => JSON.stringify([title, source, shift, flats])
+  const savedContent = new Set(existing.map(contentKey))
+  const existingIds = new Set(existing.map(sheet => sheet.id))
+
+  for (const sheet of incoming) {
+    const key = contentKey(sheet)
+    let {id} = sheet
+    if (existingIds.has(id)) {
+      if (savedContent.has(key)) continue
+      do {
+        id = createId()
+      } while (usedIds.has(id))
+      usedIds.add(id)
+    }
+    sheets.push({...sheet, id})
+  }
+  return sheets
 }
 
 export function parseChordSheet(source, shift = 0, flats = false) {

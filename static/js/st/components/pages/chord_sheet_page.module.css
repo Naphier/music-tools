@@ -81,3 +81,7 @@
   min-width: 0;
   max-width: 100%;
 }
+
+.actions input[type="file"] {
+  max-width: 100%;
+}
