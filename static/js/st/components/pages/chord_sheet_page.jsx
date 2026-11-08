@@ -3,6 +3,7 @@ import * as React from "react"
 import {setTitle} from "st/globals"
 import Toast from "st/components/toast"
 import {
+  exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
   parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
 } from "st/chord_sheet"
 import styles from "./chord_sheet_page.module.css"
@@ -67,6 +68,55 @@ export default class ChordSheetPage extends React.Component {
     }
   }
 
+  downloadBackup() {
+    try {
+      const backup = exportSongbook(readSongbook(localStorage))
+      const url = URL.createObjectURL(new Blob([backup], {type: "application/json"}))
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "music-tools-songbook.json"
+      try {
+        link.click()
+      } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+    } catch {
+      this.notify("Could not download the songbook backup.")
+    }
+  }
+
+  async restoreBackup(event) {
+    const input = event.currentTarget
+    const file = input.files[0]
+    input.value = ""
+    if (!file) return
+    if (file.size > SONGBOOK_BACKUP_SIZE_LIMIT) {
+      this.setState({importError: "Choose a songbook backup no larger than 32 MB."})
+      return
+    }
+
+    this.setState({importing: true, importError: ""})
+    try {
+      const backup = await file.text()
+      const existing = readSongbook(localStorage)
+      let sheets
+      try {
+        sheets = importSongbook(backup, existing, () => crypto.randomUUID())
+      } catch {
+        this.setState({importError: "Choose a valid Music Tools songbook backup."})
+        return
+      }
+      const added = sheets.length - existing.length
+      if (added) localStorage.setItem(SONGBOOK_STORAGE_KEY, JSON.stringify(sheets))
+      this.setState({sheets})
+      this.notify(added ? `Imported ${added} ${added === 1 ? "sheet" : "sheets"}.` : "No new sheets to import.")
+    } catch {
+      this.setState({importError: "Could not read the backup or save the imported sheets in this browser."})
+    } finally {
+      this.setState({importing: false})
+    }
+  }
+
   render() {
     const {title, source, notice, noticeId, shift, flats, sheets, activeId} = this.state
 
@@ -89,6 +139,17 @@ export default class ChordSheetPage extends React.Component {
             Delete saved sheet
           </button>
         </div>
+        <div className={styles.actions}>
+          <button type="button" disabled={!sheets.length} onClick={() => this.downloadBackup()}>
+            Download saved sheets
+          </button>
+          <label>Import songbook backup
+            <input type="file" accept=".json,application/json" disabled={this.state.importing}
+              onChange={event => this.restoreBackup(event)} />
+          </label>
+        </div>
+        <p>Backups include saved sheets only. Import keeps existing sheets and skips unchanged copies of previously imported sheets.</p>
+        {this.state.importError && <p role="alert">{this.state.importError}</p>}
         <label>Song title
           <input value={title} maxLength={SHEET_TITLE_LIMIT}
             onChange={event => this.setState({title: event.target.value})} />

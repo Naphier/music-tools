@@ -1,4 +1,4 @@
-import {parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
+import {exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
 
 describe("Chord Sheet Maker", () => {
   it("keeps lyrics before the first chord and anchors slash chords to the next lyric", () => {
@@ -72,5 +72,33 @@ describe("saved chord sheets", () => {
     for (const value of [JSON.stringify([first, first]), JSON.stringify([{...first, shift: 13}]), "{"]) {
       expect(() => readSongbook(storage({[SONGBOOK_STORAGE_KEY]: value}))).toThrow()
     }
+  })
+})
+
+describe("songbook backups", () => {
+  const song = {id: "one", title: "Practice 🎸", source: "[B♭/D]Verse", shift: -2, flats: true}
+  const createId = () => "new-id"
+
+  it("round-trips saved sheets with their transposition and preserves separate IDs", () => {
+    const sheets = [song, {...song, id: "two"}]
+    expect(importSongbook(exportSongbook(sheets), [], createId)).toEqual(sheets)
+  })
+
+  it("keeps the local edit, avoids reserved IDs and skips a repeated import", () => {
+    const local = {...song, source: "[G]Edited verse"}
+    const backup = exportSongbook([song, {...song, id: "new-id", title: "Other"}])
+    const ids = ["new-id", "replacement"]
+    const merged = importSongbook(backup, [local], () => ids.shift())
+    expect(merged).toEqual([local, {...song, id: "replacement"}, {...song, id: "new-id", title: "Other"}])
+    expect(importSongbook(backup, merged, createId)).toEqual(merged)
+  })
+
+  it("rejects malformed, unsupported and partially invalid backups without changing existing sheets", () => {
+    const existing = [song]
+    for (const backup of ["{", '{"version":2,"sheets":[]}',
+      JSON.stringify({version: 1, sheets: [song, {...song, id: "two", shift: 13}]})]) {
+      expect(() => importSongbook(backup, existing, createId)).toThrow()
+    }
+    expect(existing).toEqual([song])
   })
 })
