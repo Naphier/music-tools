@@ -2,9 +2,9 @@ import {Chord, noteName, OCTAVE_SIZE, parseNote} from "st/music"
 import {STANDARD_TUNING} from "st/guitar_scales"
 
 const GUITAR_STRINGS = [...STANDARD_TUNING].reverse()
-const CHORD_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+export const CHORD_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
 const CHORD_SUFFIXES = {M: "", M6: "6"}
-const CHORD_SHAPES = {
+export const CHORD_SHAPES = {
   ...Chord.SHAPES,
   sus2: [2, 5],
   sus4: [5, 2],

@@ -16,6 +16,7 @@ import DrumMachinePage from "st/components/pages/drum_machine_page"
 import GuitarScalesPage from "st/components/pages/guitar_scales_page"
 import ChordLabPage from "st/components/pages/chord_lab_page"
 import ChordSheetPage from "st/components/pages/chord_sheet_page"
+import ChordReferencePage from "st/components/pages/chord_reference_page"
 import Header from "st/components/header"
 
 import DevicePickerLightbox from "st/components/device_picker_lightbox"
@@ -154,6 +155,7 @@ class Layout extends React.Component {
         <Route path="/guitar-scales" element={<GuitarScalesPage {...pageProps} />} />
         <Route path="/chord-lab" element={<ChordLabPage {...pageProps} />} />
         <Route path="/chord-sheet" element={<ChordSheetPage {...pageProps} />} />
+        <Route path="/chord-reference" element={<ChordReferencePage {...pageProps} />} />
         <Route path="/stats" element={<StatsPage {...pageProps} />} />
         <Route path="/latency" element={<LatencyPage {...pageProps} />} />
         <Route path="/midi-monitor" element={<MidiMonitorPage {...pageProps} />} />

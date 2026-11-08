@@ -1,0 +1,50 @@
+.page {
+  box-sizing: border-box;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px clamp(10px, 3vw, 24px) 64px;
+}
+
+.page label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.page input {
+  box-sizing: border-box;
+  width: min(100%, 26rem);
+  min-height: 44px;
+  padding: 6px 10px;
+  font: inherit;
+}
+
+.page input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+}
+
+.results li {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.results :is(h2, p, dl) {
+  margin: 0 0 6px;
+}
+
+.results dt {
+  font-weight: bold;
+}
+
+.results dd {
+  margin: 0 0 4px;
+}
