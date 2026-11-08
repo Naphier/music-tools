@@ -88,9 +88,9 @@ export default class Header extends React.Component {
 
       if (session.currentUser) {
         accountArea = <div className={classNames(styles.account_area, styles.logged_in)}>
-          <span className={styles.username}>
-            {session.currentUser.username}
-          </span>
+          <NavLink className={styles.username} to="/account">
+            {session.currentUser.displayName || session.currentUser.username}
+          </NavLink>
           <a href="#" onClick={this.props.doLogout}>Log out</a>
         </div>
       } else {
@@ -139,7 +139,7 @@ export default class Header extends React.Component {
 
     if (session.currentUser) {
       userPanel = <div className={styles.right_section} key="user_in">
-        {session.currentUser.username}
+        <NavLink to="/account">{session.currentUser.displayName || session.currentUser.username}</NavLink>
         {" " }
         <a href="#" onClick={this.props.doLogout}>Log out</a>
       </div>
@@ -167,6 +167,7 @@ export default class Header extends React.Component {
       <NavLink key="drum-machine" to="/drum-machine" {...toggleActive}>Drum Machine</NavLink>,
       <NavLink key="guitar-scales" to="/guitar-scales" {...toggleActive}>Guitar Scales</NavLink>,
       <NavLink key="chord-lab" to="/chord-lab" {...toggleActive}>Chord Lab</NavLink>,
+      <NavLink key="chord-sheet" to="/chord-sheet" {...toggleActive}>Chord Sheet</NavLink>,
       <NavLink key="chord-reference" to="/chord-reference" {...toggleActive}>Chord Reference</NavLink>,
       <NavLink end key="about" to="/about" {...toggleActive}>Guide</NavLink>,
     ]

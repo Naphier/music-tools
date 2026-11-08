@@ -28,7 +28,7 @@ const QUALITIES = {
 
 const LETTERS = "CDEFGAB"
 const NATURAL_PITCHES = [0, 2, 4, 5, 7, 9, 11]
-const ROOTS = [...CHORD_ROOTS, "C#", "D#", "Gb", "G#", "A#"]
+const ROOTS = [...CHORD_ROOTS, "Cb", "C#", "D#", "E#", "Fb", "Gb", "G#", "A#", "B#"]
 const ORDINALS = {second: "2", fourth: "4", sixth: "6", seventh: "7", ninth: "9"}
 
 function display(value) {
@@ -60,6 +60,8 @@ const CATALOG = ROOTS.flatMap(root =>
 export function searchChords(query) {
   const normalized = query.trim().replaceAll("♯", "#").replaceAll("♭", "b")
     .replace(/\bsharp\b/gi, "#").replace(/\bflat\b/gi, "b")
+  if (!normalized) return []
+
   const compact = normalized.replace(/\s+/g, "")
   const symbol = compact.match(/^([A-Ga-g])([#b]?)(.*)$/)
   if (symbol) {
@@ -68,6 +70,16 @@ export function searchChords(query) {
       chord.root === letter.toUpperCase() + accidental && chord.symbols.has(suffix)
     )
     if (exact.length) return exact
+
+    // Keep M and m distinct while accepting case-insensitive named suffixes.
+    if (suffix.length >= 3) {
+      const named = CATALOG.filter(chord =>
+        chord.root === letter.toUpperCase() + accidental &&
+        [...chord.symbols].some(alias => /^[a-z]{3}/i.test(alias) &&
+          alias.toLowerCase() === suffix.toLowerCase())
+      )
+      if (named.length) return named
+    }
   }
 
   const root = normalized.match(/^([A-Ga-g])\s*([#b])?(?:\s+|$)/)

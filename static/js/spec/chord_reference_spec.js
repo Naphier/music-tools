@@ -17,7 +17,18 @@ describe("Chord Reference", () => {
     expect(searchChords("Ebdim7")[0].notes).toEqual(["E♭", "G♭", "B♭♭", "D♭♭"])
   })
 
-  it("returns no results for unknown queries", () => {
+  it("accepts named suffixes regardless of case", () => {
+    expect(searchChords("cMAJ7").map(chord => chord.symbol)).toEqual(["Cmaj7"])
+    expect(searchChords("CMin7").map(chord => chord.symbol)).toEqual(["Cm7"])
+  })
+
+  it("preserves less common enharmonic roots", () => {
+    expect(searchChords("C flat major")[0].notes).toEqual(["C♭", "E♭", "G♭"])
+    expect(searchChords("E#")[0].notes).toEqual(["E♯", "G♯♯", "B♯"])
+  })
+
+  it("returns no results for blank or unknown queries", () => {
+    expect(searchChords("  ")).toEqual([])
     expect(searchChords("unknown chord")).toEqual([])
   })
 })
