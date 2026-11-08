@@ -3,20 +3,23 @@ import * as React from "react"
 import {setTitle} from "st/globals"
 import Toast from "st/components/toast"
 import {
-  parseChordSheet, readChordSheet, SHEET_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
+  parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
 } from "st/chord_sheet"
 import styles from "./chord_sheet_page.module.css"
 
+const EMPTY_SHEET = {title: "", source: "", shift: 0, flats: false}
+
 export default class ChordSheetPage extends React.Component {
-  state = {title: "", source: "", notice: "", noticeId: 0, shift: 0, flats: false}
+  state = {...EMPTY_SHEET, sheets: [], activeId: "", notice: "", noticeId: 0}
 
   componentDidMount() {
     setTitle("Chord Sheet Maker")
     try {
-      const saved = localStorage.getItem(SHEET_STORAGE_KEY)
-      if (saved !== null) this.setState(readChordSheet(saved))
+      const sheets = readSongbook(localStorage)
+      const first = sheets[0]
+      this.setState({sheets, ...(first || EMPTY_SHEET), activeId: first?.id || ""})
     } catch {
-      this.notify("Could not load the draft from this browser.")
+      this.notify("Could not load saved sheets from this browser.")
     }
   }
 
@@ -24,18 +27,48 @@ export default class ChordSheetPage extends React.Component {
     this.setState(({noticeId}) => ({notice, noticeId: noticeId + 1}))
   }
 
+  open(id) {
+    const {sheets, activeId, title, source, shift, flats} = this.state
+    if (id === activeId) return
+    const saved = sheets.find(sheet => sheet.id === activeId) || EMPTY_SHEET
+    const dirty = title !== saved.title || source !== saved.source ||
+      shift !== saved.shift || flats !== saved.flats
+    if (dirty && !window.confirm("Discard unsaved changes to this sheet?")) return
+    this.setState({...(sheets.find(sheet => sheet.id === id) || EMPTY_SHEET), activeId: id})
+  }
+
   save() {
-    const {title, source} = this.state
+    const {activeId, title, source, shift, flats} = this.state
     try {
-      localStorage.setItem(SHEET_STORAGE_KEY, JSON.stringify({title, source}))
-      this.notify("Draft saved in this browser.")
+      const sheets = readSongbook(localStorage)
+      const id = activeId || crypto.randomUUID()
+      const sheet = {id, title, source, shift, flats}
+      const updated = sheets.some(saved => saved.id === id)
+        ? sheets.map(saved => saved.id === id ? sheet : saved)
+        : [sheet, ...sheets]
+      localStorage.setItem(SONGBOOK_STORAGE_KEY, JSON.stringify(updated))
+      this.setState({sheets: updated, activeId: id})
+      this.notify("Sheet saved in this browser.")
     } catch {
-      this.notify("Could not save the draft in this browser.")
+      this.notify("Could not save the sheet in this browser.")
+    }
+  }
+
+  remove() {
+    const {activeId} = this.state
+    if (!window.confirm("Delete this saved sheet and discard any unsaved changes?")) return
+    try {
+      const sheets = readSongbook(localStorage).filter(sheet => sheet.id !== activeId)
+      localStorage.setItem(SONGBOOK_STORAGE_KEY, JSON.stringify(sheets))
+      this.setState({...EMPTY_SHEET, sheets, activeId: ""})
+      this.notify("Saved sheet deleted.")
+    } catch {
+      this.notify("Could not delete the saved sheet.")
     }
   }
 
   render() {
-    const {title, source, notice, noticeId, shift, flats} = this.state
+    const {title, source, notice, noticeId, shift, flats, sheets, activeId} = this.state
 
     return <main className={styles.page}>
       <div className={styles.editor}>
@@ -43,6 +76,19 @@ export default class ChordSheetPage extends React.Component {
         <p>Put chords in brackets just before the words they go with, like <code>[Am]Here comes [F]the chorus</code>.
           Use blank lines between sections. For an instrumental line, enter just the chords.</p>
 
+        <div className={styles.actions}>
+          <label>Saved sheets
+            <select value={activeId} onChange={event => this.open(event.target.value)}>
+              <option value="">New sheet</option>
+              {sheets.map((sheet, index) => <option key={sheet.id} value={sheet.id}>
+                {index + 1}. {sheet.title.trim() || "Untitled song"}
+              </option>)}
+            </select>
+          </label>
+          <button type="button" disabled={!activeId} onClick={() => this.remove()}>
+            Delete saved sheet
+          </button>
+        </div>
         <label>Song title
           <input value={title} maxLength={SHEET_TITLE_LIMIT}
             onChange={event => this.setState({title: event.target.value})} />
@@ -51,7 +97,7 @@ export default class ChordSheetPage extends React.Component {
           <textarea value={source} maxLength={SHEET_SOURCE_LIMIT} rows={12}
             onChange={event => this.setState({source: event.target.value})} />
         </label>
-        <p>Saving replaces the single draft stored in this browser. Transposition applies to the preview and printout.</p>
+        <p>Sheets and their transposition settings are saved in this browser. Saving an open sheet updates that sheet.</p>
         <div className={styles.actions}>
           <label>Transpose
             <select value={shift} onChange={event => this.setState({shift: Number(event.target.value)})}>
@@ -66,7 +112,7 @@ export default class ChordSheetPage extends React.Component {
               <option value="flats">Flats</option>
             </select>
           </label>
-          <button type="button" onClick={() => this.save()}>Save draft</button>
+          <button type="button" disabled={!title.trim() && !source.trim()} onClick={() => this.save()}>Save sheet</button>
           <button type="button" disabled={!source.trim()} onClick={() => window.print()}>
             Print / Save PDF
           </button>

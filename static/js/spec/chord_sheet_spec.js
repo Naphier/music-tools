@@ -1,4 +1,4 @@
-import {parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT} from "st/chord_sheet"
+import {parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
 
 describe("Chord Sheet Maker", () => {
   it("keeps lyrics before the first chord and anchors slash chords to the next lyric", () => {
@@ -42,5 +42,35 @@ describe("chord sheet", function() {
   it("supports flat spelling and preserves original spelling at zero", function() {
     expect(parseChordSheet("[C/E]", 1, true)[0][0].chord).toBe("Db/F")
     expect(parseChordSheet("[C♯/G♯]")[0][0].chord).toBe("C♯/G♯")
+  })
+})
+
+describe("saved chord sheets", () => {
+  const legacy = {title: "Old song", source: "[Am]Verse"}
+  const first = {...legacy, id: "one", shift: 2, flats: true}
+  const second = {...first, id: "two", source: "[G]Chorus", shift: -3}
+  const storage = entries => ({getItem: key => entries[key] ?? null})
+
+  it("loads the legacy draft when there is no songbook", () => {
+    expect(readSongbook(storage({[SHEET_STORAGE_KEY]: JSON.stringify(legacy)})))
+      .toEqual([{...legacy, id: "legacy", shift: 0, flats: false}])
+  })
+
+  it("keeps songs with the same title distinct and restores transposition", () => {
+    expect(readSongbook(storage({[SONGBOOK_STORAGE_KEY]: JSON.stringify([first, second])})))
+      .toEqual([first, second])
+  })
+
+  it("does not resurrect a deleted legacy draft", () => {
+    expect(readSongbook(storage({
+      [SHEET_STORAGE_KEY]: JSON.stringify(legacy),
+      [SONGBOOK_STORAGE_KEY]: "[]",
+    }))).toEqual([])
+  })
+
+  it("rejects duplicate IDs, invalid transposition, and corrupt data", () => {
+    for (const value of [JSON.stringify([first, first]), JSON.stringify([{...first, shift: 13}]), "{"]) {
+      expect(() => readSongbook(storage({[SONGBOOK_STORAGE_KEY]: value}))).toThrow()
+    }
   })
 })
