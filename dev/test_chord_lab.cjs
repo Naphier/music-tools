@@ -9,7 +9,7 @@ const outdir = mkdtempSync(join(tmpdir(), 'chord-lab-specs-'))
 try {
   esbuild.buildSync({
     absWorkingDir: root,
-    entryPoints: ['static/js/spec/chord_lab_spec.js', 'static/js/spec/chord_midi_spec.js', 'static/js/spec/chord_reference_spec.js'],
+    entryPoints: ['static/js/spec/chord_sheet_spec.js', 'static/js/spec/chord_lab_spec.js', 'static/js/spec/chord_midi_spec.js', 'static/js/spec/chord_reference_spec.js'],
     bundle: true, outdir, platform: 'node', format: 'cjs',
     nodePaths: [join(root, 'static/js')], loader: {'.css': 'empty'},
   })
@@ -26,6 +26,7 @@ try {
       process.exitCode = result.overallStatus === 'passed' ? 0 : 1
     },
   })
+  require(join(outdir, 'chord_sheet_spec.js'))
   require(join(outdir, 'chord_lab_spec.js'))
   require(join(outdir, 'chord_midi_spec.js'))
   require(join(outdir, 'chord_reference_spec.js'))
