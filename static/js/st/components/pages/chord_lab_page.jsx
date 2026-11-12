@@ -1,5 +1,7 @@
 import * as React from "react"
 
+import ChordMidi from "st/chord_midi"
+import {trigger} from "st/events"
 import {setTitle} from "st/globals"
 import {chordNote, guitarVoicing, identifyChords} from "st/chord_lab"
 import styles from "./chord_lab_page.module.css"
@@ -15,24 +17,56 @@ const EXAMPLES = {
 }
 
 export default class ChordLabPage extends React.Component {
-  state = {frets: STRINGS.map(() => null), instrument: "guitar", pianoNotes: []}
+  state = {frets: STRINGS.map(() => null), instrument: "guitar", pianoNotes: [], midiNotes: []}
+
+  midiChord = new ChordMidi()
+
+  resetMidi = () => {
+    this.midiChord.reset()
+    this.setState({midiNotes: []})
+  }
+
+  handleInputState = () => {
+    if (this.props.midiInput?.state === "disconnected") this.resetMidi()
+  }
+
+  onMidiMessage(message) {
+    if (this.state.instrument !== "midi" || this.props.midiInput?.state === "disconnected") return
+    this.midiChord.receive(message.data)
+    this.setState({midiNotes: this.midiChord.notes})
+  }
+
+  componentDidUpdate(previous) {
+    if (previous.midiInput !== this.props.midiInput) {
+      previous.midiInput?.removeEventListener("statechange", this.handleInputState)
+      this.props.midiInput?.addEventListener("statechange", this.handleInputState)
+      this.resetMidi()
+    }
+  }
+
+  componentWillUnmount() {
+    this.props.midiInput?.removeEventListener("statechange", this.handleInputState)
+    this.midiChord.reset()
+  }
 
   componentDidMount() {
+    this.props.midiInput?.addEventListener("statechange", this.handleInputState)
     setTitle("Chord Lab")
   }
 
   render() {
-    const {frets, instrument, pianoNotes} = this.state
-    const pitches = instrument === "guitar" ? guitarVoicing(frets) : pianoNotes
+    const {frets, instrument, pianoNotes, midiNotes} = this.state
+    const pitches = instrument === "guitar" ? guitarVoicing(frets) : instrument === "midi" ? midiNotes : pianoNotes
     const notes = [...new Set([...pitches].sort((a, b) => a - b).map(chordNote))]
     const matches = identifyChords(pitches)
 
     return <main className={styles.page}>
       <h1>Chord Lab</h1>
       <label>Instrument
-        <select value={instrument} onChange={event => this.setState({instrument: event.target.value})}>
+        <select value={instrument} onChange={event => { this.resetMidi(); this.setState({instrument: event.target.value}) }}>
           <option value="guitar">Guitar</option>
           <option value="piano">Piano</option>
+          <option value="midi">MIDI keyboard</option>
         </select>
       </label>
       {instrument === "guitar" ? <>
@@ -68,6 +102,14 @@ export default class ChordLabPage extends React.Component {
         </button>
       </div>
 
+      </> : instrument === "midi" ? <>
+        <p>Play and hold a chord on your MIDI keyboard. Sustain pedal notes count until you release the pedal. Use the device picker to enable MIDI audio forwarding if you want sound.</p>
+        <p role="status">{this.props.midiInput && this.props.midiInput.state !== "disconnected"
+          ? `Input: ${this.props.midiInput.name || "MIDI keyboard"}` : "No connected MIDI input selected. Connect a keyboard and choose it below."}</p>
+        <div className={styles.actions}>
+          <button type="button" onClick={() => trigger(this, "pickMidi")}>Choose MIDI device</button>
+          <button type="button" onClick={this.resetMidi}>Reset MIDI notes</button>
+        </div>
       </> : <>
         <p id="piano-help">Select notes from C3 to C5. Select a note again to remove it. The lowest selected note determines the bass.</p>
         <div className={styles.piano} role="group" aria-label="Piano notes" aria-describedby="piano-help">
