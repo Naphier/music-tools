@@ -242,11 +242,11 @@ export default class ChordSheetPage extends React.Component {
         </div>
         <p>Backups include saved sheets only. Import keeps existing sheets and skips unchanged copies of previously imported sheets.</p>
         {this.state.importError && <p role="alert">{this.state.importError}</p>}
-        <label>Open chord sheet text
-          <input type="file" accept=".txt,text/plain" disabled={this.state.importingText}
+        <label>Open text / ChordPro sheet
+          <input type="file" accept=".txt,.cho,.crd,.chordpro,.pro,text/plain" disabled={this.state.importingText}
             onChange={event => this.importText(event)} />
         </label>
-        <p>Open a UTF-8 text file with bracketed chords. The filename becomes its title.
+        <p>Open UTF-8 text or ChordPro with bracketed chords. ChordPro titles, artists, comments, sections, and capo notes are imported; other directives stay visible. Capo notes do not transpose chords. The filename supplies a missing title.
           Imported text starts in its written key as a new, unsaved sheet.</p>
         {this.state.textImportError && <p role="alert">{this.state.textImportError}</p>}
         <label>Song title
