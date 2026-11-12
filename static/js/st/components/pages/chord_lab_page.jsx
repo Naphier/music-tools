@@ -5,6 +5,7 @@ import {chordNote, guitarVoicing, identifyChords} from "st/chord_lab"
 import styles from "./chord_lab_page.module.css"
 
 const STRINGS = ["Low E", "A", "D", "G", "B", "High E"]
+const PIANO_KEYS = Array.from({length: 25}, (_, index) => 48 + index)
 const FRETS = Array.from({length: 13}, (_, fret) => fret)
 const EXAMPLES = {
   "C major": [null, 3, 2, 0, 1, 0],
@@ -14,20 +15,27 @@ const EXAMPLES = {
 }
 
 export default class ChordLabPage extends React.Component {
-  state = {frets: STRINGS.map(() => null)}
+  state = {frets: STRINGS.map(() => null), instrument: "guitar", pianoNotes: []}
 
   componentDidMount() {
     setTitle("Chord Lab")
   }
 
   render() {
-    const {frets} = this.state
-    const pitches = guitarVoicing(frets)
+    const {frets, instrument, pianoNotes} = this.state
+    const pitches = instrument === "guitar" ? guitarVoicing(frets) : pianoNotes
     const notes = [...new Set([...pitches].sort((a, b) => a - b).map(chordNote))]
     const matches = identifyChords(pitches)
 
     return <main className={styles.page}>
       <h1>Chord Lab</h1>
+      <label>Instrument
+        <select value={instrument} onChange={event => this.setState({instrument: event.target.value})}>
+          <option value="guitar">Guitar</option>
+          <option value="piano">Piano</option>
+        </select>
+      </label>
+      {instrument === "guitar" ? <>
       <p>Choose an open string or fret 1–12 for each sounding string in standard tuning. Leave unused strings muted.</p>
 
       <div className={styles.strings}>
@@ -60,11 +68,29 @@ export default class ChordLabPage extends React.Component {
         </button>
       </div>
 
+      </> : <>
+        <p id="piano-help">Select notes from C3 to C5. Select a note again to remove it. The lowest selected note determines the bass.</p>
+        <div className={styles.piano} role="group" aria-label="Piano notes" aria-describedby="piano-help">
+          {PIANO_KEYS.map(pitch => {
+            const label = `${chordNote(pitch)}${Math.floor(pitch / 12) - 1}`
+            return <button type="button" key={pitch} aria-pressed={pianoNotes.includes(pitch)}
+              className={chordNote(pitch).match(/[♯♭]/) ? styles.accidental : undefined}
+              onClick={() => this.setState(({pianoNotes}) => ({pianoNotes: pianoNotes.includes(pitch)
+                ? pianoNotes.filter(note => note !== pitch) : [...pianoNotes, pitch]}))}>
+              {label}
+            </button>
+          })}
+        </div>
+        <div className={styles.actions}>
+          <button type="button" onClick={() => this.setState({pianoNotes: []})}>Clear piano notes</button>
+        </div>
+      </>}
+
       <section aria-live="polite">
         <h2>Chord matches</h2>
         {notes.length > 0 && <p>Notes from the bass up: {notes.join(" · ")}</p>}
         {notes.length < 3
-          ? <p>Play at least three different notes to identify a chord.</p>
+          ? <p>Select at least three different notes to identify a chord.</p>
           : matches.length === 0
             ? <p>No exact match in the chord library. Check for an extra or missing note.</p>
             : <ul>{matches.map(match => <li key={match}>{match}</li>)}</ul>}

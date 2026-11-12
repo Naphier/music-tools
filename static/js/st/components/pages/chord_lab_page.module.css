@@ -33,3 +33,23 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+.piano {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+  gap: 6px;
+}
+
+.piano button {
+  min-height: 72px;
+}
+
+.piano .accidental {
+  border-style: dashed;
+}
+
+.piano button[aria-pressed="true"] {
+  background: var(--link-color, #386bb1);
+  color: white;
+  box-shadow: inset 0 0 0 3px currentColor;
+}
