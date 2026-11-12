@@ -1,5 +1,5 @@
 import ChordSheetPage from "st/components/pages/chord_sheet_page"
-import {readEditorDraft, writeEditorDraft, SHEET_EDITOR_STORAGE_KEY, importChordSheet, exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
+import {searchSongbook, readEditorDraft, writeEditorDraft, SHEET_EDITOR_STORAGE_KEY, importChordSheet, exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
 
 describe("Chord Sheet Maker", () => {
   it("keeps lyrics before the first chord and anchors slash chords to the next lyric", () => {
@@ -332,5 +332,45 @@ describe("chord sheet editor recovery", () => {
     write.and.throwError("quota")
     editor.componentDidUpdate({}, previous)
     expect(editor.state.noticeId).toBe(noticeId + 1)
+  })
+})
+
+
+describe("Songbook search", () => {
+  const sheets = [
+    {id: "1", title: "Song 10", source: "[Am]Café moon"},
+    {id: "2", title: "Song 2", source: "[G]Sunrise"},
+    {id: "3", title: "", source: "Moon river"},
+  ]
+  it("matches all words across titles and lyrics, ignoring case, accents and spacing", () => {
+    expect(searchSongbook(sheets, "  CAFE  song ").map(sheet => sheet.id)).toEqual(["1"])
+    expect(searchSongbook(sheets, "moon").map(sheet => sheet.id)).toEqual(["1", "3"])
+    expect(searchSongbook(sheets, "missing")).toEqual([])
+  })
+  it("sorts naturally by title without changing saved order or entries", () => {
+    expect(searchSongbook(sheets, "", "title").map(sheet => sheet.id)).toEqual(["2", "1", "3"])
+    expect(searchSongbook(sheets, "  ").map(sheet => sheet.id)).toEqual(["1", "2", "3"])
+    expect(searchSongbook(sheets)[0]).toBe(sheets[0])
+    expect(searchSongbook([], "moon", "title")).toEqual([])
+  })
+  it("keeps the current sheet selectable outside search without changing the editor draft", () => {
+    const page = new ChordSheetPage({})
+    Object.assign(page.state, {sheets, activeId: "1", title: "Unsaved title", source: "Unsaved lyrics", songbookQuery: "sunrise"})
+    const tree = page.render()
+    const elements = []
+    const visit = node => {
+      if (!node || typeof node !== "object") return
+      if (Array.isArray(node)) return node.forEach(visit)
+      elements.push(node)
+      visit(node.props?.children)
+    }
+    visit(tree)
+    const options = elements.filter(node => node.type === "option")
+    expect(options.some(node => node.props.value === "1")).toBe(true)
+    expect(options.some(node => node.props.value === "2")).toBe(true)
+    expect(options.some(node => node.props.value === "3")).toBe(false)
+    expect(page.state.title).toBe("Unsaved title")
+    expect(page.state.source).toBe("Unsaved lyrics")
+    expect(page.state.activeId).toBe("1")
   })
 })

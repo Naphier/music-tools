@@ -171,3 +171,18 @@ export function writeEditorDraft(storage, state) {
   storage.setItem(SHEET_EDITOR_STORAGE_KEY,
     JSON.stringify(validateEditorDraft({version: 1, title, source, shift, flats, activeId})))
 }
+
+// Return a view of the songbook without reordering or changing saved entries.
+export function searchSongbook(sheets, query = "", sort = "saved") {
+  const normalize = value => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+  const terms = normalize(query).trim().split(/\s+/).filter(Boolean)
+  const matches = sheets.filter(sheet => {
+    const text = normalize(`${sheet.title} ${sheet.source}`)
+    return terms.every(term => text.includes(term))
+  })
+  if (sort === "title") {
+    matches.sort((a, b) => (a.title.trim() || "Untitled song").localeCompare(
+      b.title.trim() || "Untitled song", undefined, {sensitivity: "base", numeric: true}))
+  }
+  return matches
+}
