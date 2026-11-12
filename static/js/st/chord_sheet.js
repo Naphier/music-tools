@@ -141,3 +141,33 @@ export function importChordSheet(source, filename = "chord-sheet.txt") {
   }).join("\n")
   return {...validateSheet({title, source}), shift: 0, flats: false}
 }
+
+
+// Separate from saved songs: recovery never overwrites a saved sheet.
+export const SHEET_EDITOR_STORAGE_KEY = "chord-sheet-editor:v1"
+
+function validateEditorDraft(draft) {
+  if (draft?.version !== 1 || typeof draft.activeId !== "string" || draft.activeId.length > 200) {
+    throw new Error("Invalid editor draft")
+  }
+  const [sheet] = validateSongbook([{...draft, id: "draft"}])
+  const {title, source, shift, flats} = sheet
+  return {version: 1, title, source, shift, flats, activeId: draft.activeId}
+}
+
+export function readEditorDraft(storage, sheets) {
+  const value = storage.getItem(SHEET_EDITOR_STORAGE_KEY)
+  if (value === null) return null
+  const draft = validateEditorDraft(JSON.parse(value))
+  delete draft.version
+  // A saved sheet may have been deleted in another tab. Keep the recovered text
+  // as a new sheet instead of silently recreating or replacing a saved entry.
+  if (!sheets.some(sheet => sheet.id === draft.activeId)) draft.activeId = ""
+  return draft
+}
+
+export function writeEditorDraft(storage, state) {
+  const {title, source, shift, flats, activeId} = state
+  storage.setItem(SHEET_EDITOR_STORAGE_KEY,
+    JSON.stringify(validateEditorDraft({version: 1, title, source, shift, flats, activeId})))
+}

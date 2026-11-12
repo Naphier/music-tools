@@ -1,5 +1,5 @@
 import ChordSheetPage from "st/components/pages/chord_sheet_page"
-import {importChordSheet, exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
+import {readEditorDraft, writeEditorDraft, SHEET_EDITOR_STORAGE_KEY, importChordSheet, exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
 
 describe("Chord Sheet Maker", () => {
   it("keeps lyrics before the first chord and anchors slash chords to the next lyric", () => {
@@ -220,5 +220,117 @@ describe("ChordPro import", () => {
   it("rejects oversized input and titles before replacing the draft", () => {
     expect(() => importChordSheet("{title: " + "x".repeat(121) + "}")).toThrow()
     expect(() => importChordSheet("{title: " + "x".repeat(SHEET_SOURCE_LIMIT) + "}")).toThrow()
+  })
+})
+
+
+describe("chord sheet editor recovery", () => {
+  let previousStorage, previousCancel, storage, entries
+  const saved = {id: "one", title: "Saved", source: "[C]Original", shift: 0, flats: false}
+  const draft = {title: "Edited", source: "[Am]Unsaved", shift: -2, flats: true, activeId: "one"}
+  function page() {
+    const editor = new ChordSheetPage({})
+    editor.setState = (update, callback) => {
+      Object.assign(editor.state, typeof update === "function" ? update(editor.state) : update)
+      callback?.()
+    }
+    return editor
+  }
+  beforeEach(() => {
+    previousStorage = globalThis.localStorage
+    previousCancel = globalThis.cancelAnimationFrame
+    globalThis.cancelAnimationFrame = () => {}
+    entries = {[SONGBOOK_STORAGE_KEY]: JSON.stringify([saved])}
+    storage = {
+      getItem: key => entries[key] ?? null,
+      setItem: (key, value) => { entries[key] = value },
+    }
+    globalThis.localStorage = storage
+  })
+  afterEach(() => {
+    globalThis.cancelAnimationFrame = previousCancel
+    if (previousStorage === undefined) delete globalThis.localStorage
+    else globalThis.localStorage = previousStorage
+  })
+
+  it("restores unsaved edits and transposition after reopening without updating saved songs", () => {
+    writeEditorDraft(storage, draft)
+    const editor = page()
+    editor.loadEditor()
+    for (const key of Object.keys(draft)) expect(editor.state[key]).toEqual(draft[key])
+    expect(editor.state.sheets).toEqual([saved])
+    expect(readSongbook(storage)).toEqual([saved])
+    expect(editor.state.notice).toContain("Restored")
+  })
+
+  it("keeps a recovered sheet as new when its saved entry was deleted", () => {
+    writeEditorDraft(storage, draft)
+    expect(readEditorDraft(storage, [])).toEqual({...draft, activeId: ""})
+  })
+
+  it("records clearing the editor so an older draft cannot reappear", () => {
+    writeEditorDraft(storage, draft)
+    const empty = {title: "", source: "", shift: 0, flats: false, activeId: ""}
+    writeEditorDraft(storage, empty)
+    expect(readEditorDraft(storage, [saved])).toEqual(empty)
+    const editor = page()
+    editor.loadEditor()
+    expect(editor.state.source).toBe("")
+    expect(editor.state.activeId).toBe("")
+  })
+
+  it("rejects corrupt or unsupported drafts and falls back to the saved song", () => {
+    for (const value of ["{", "null", JSON.stringify({...draft, version: 2}),
+      JSON.stringify({...draft, version: 1, shift: 13}),
+      JSON.stringify({...draft, version: 1, source: "x".repeat(SHEET_SOURCE_LIMIT + 1)})]) {
+      entries[SHEET_EDITOR_STORAGE_KEY] = value
+      expect(() => readEditorDraft(storage, [saved])).toThrow()
+      const editor = page()
+      editor.loadEditor()
+      expect(editor.state.source).toBe(saved.source)
+      expect(editor.state.notice).toContain("Could not recover")
+    }
+  })
+
+  it("recovers the draft independently of a corrupt songbook", () => {
+    writeEditorDraft(storage, draft)
+    entries[SONGBOOK_STORAGE_KEY] = "{"
+    const editor = page()
+    editor.loadEditor()
+    expect(editor.state.source).toBe(draft.source)
+    expect(editor.state.activeId).toBe("")
+    expect(editor.state.sheets).toEqual([])
+  })
+
+  it("backs up changed editor fields but ignores status and playback changes", () => {
+    const editor = page()
+    editor.loadEditor()
+    const previous = {...editor.state}
+    Object.assign(editor.state, draft)
+    editor.componentDidUpdate({}, previous)
+    expect(readEditorDraft(storage, [saved])).toEqual(draft)
+    spyOn(storage, "setItem")
+    editor.componentDidUpdate({}, {...editor.state, scrolling: true, notice: "other"})
+    expect(storage.setItem).not.toHaveBeenCalled()
+  })
+
+  it("warns once per storage failure and resumes recovery writes on retry", () => {
+    const editor = page()
+    editor.loadEditor()
+    const previous = {...editor.state}
+    Object.assign(editor.state, draft)
+    const write = spyOn(storage, "setItem").and.throwError("quota")
+    editor.componentDidUpdate({}, previous)
+    const noticeId = editor.state.noticeId
+    editor.componentDidUpdate({}, previous)
+    expect(editor.state.notice).toContain("Could not back up")
+    expect(editor.state.noticeId).toBe(noticeId)
+    expect(editor.state.source).toBe(draft.source)
+    write.and.callThrough()
+    editor.componentDidUpdate({}, previous)
+    expect(readEditorDraft(storage, [saved])).toEqual(draft)
+    write.and.throwError("quota")
+    editor.componentDidUpdate({}, previous)
+    expect(editor.state.noticeId).toBe(noticeId + 1)
   })
 })
