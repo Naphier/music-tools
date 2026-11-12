@@ -4,14 +4,14 @@ import {setTitle} from "st/globals"
 import Toast from "st/components/toast"
 import {
   exportChordSheet, importChordSheet, exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
-  readEditorDraft, writeEditorDraft, parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
+  searchSongbook, readEditorDraft, writeEditorDraft, parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
 } from "st/chord_sheet"
 import styles from "./chord_sheet_page.module.css"
 
 const EMPTY_SHEET = {title: "", source: "", shift: 0, flats: false}
 
 export default class ChordSheetPage extends React.Component {
-  state = {...EMPTY_SHEET, sheets: [], activeId: "", notice: "", noticeId: 0, practicing: false, scrolling: false, scrollSpeed: 30}
+  state = {...EMPTY_SHEET, sheets: [], songbookQuery: "", songbookSort: "saved", activeId: "", notice: "", noticeId: 0, practicing: false, scrolling: false, scrollSpeed: 30}
 
   componentDidMount() {
     setTitle("Chord Sheet Maker")
@@ -239,6 +239,9 @@ export default class ChordSheetPage extends React.Component {
   render() {
     const {title, source, notice, noticeId, shift, flats, sheets, activeId} = this.state
 
+    const visibleSheets = searchSongbook(sheets, this.state.songbookQuery, this.state.songbookSort)
+    const hiddenActive = sheets.find(sheet => sheet.id === activeId && !visibleSheets.includes(sheet))
+
     return <main className={`${styles.page} ${this.state.practicing ? styles.practicing : ""}`}>
       <div className={styles.editor}>
         <h1>Chord Sheet Maker</h1>
@@ -246,10 +249,25 @@ export default class ChordSheetPage extends React.Component {
           Use blank lines between sections. For an instrumental line, enter just the chords.</p>
 
         <div className={styles.actions}>
+          <label>Search saved sheets
+            <input type="search" value={this.state.songbookQuery} placeholder="Title or lyrics"
+              onChange={event => this.setState({songbookQuery: event.target.value})} />
+          </label>
+          <label>Sort saved sheets
+            <select value={this.state.songbookSort} onChange={event => this.setState({songbookSort: event.target.value})}>
+              <option value="saved">Saved order</option>
+              <option value="title">Title (A–Z)</option>
+            </select>
+          </label>
+          {this.state.songbookQuery && <button type="button" onClick={() => this.setState({songbookQuery: ""})}>Clear search</button>}
+        </div>
+        <p role="status">{visibleSheets.length} of {sheets.length} saved sheets{this.state.songbookQuery.trim() && !visibleSheets.length ? " — no matches. Try another title or lyric." : "."}</p>
+        <div className={styles.actions}>
           <label>Saved sheets
             <select value={activeId} onChange={event => this.open(event.target.value)}>
               <option value="">New sheet</option>
-              {sheets.map((sheet, index) => <option key={sheet.id} value={sheet.id}>
+              {hiddenActive && <option value={hiddenActive.id}>{hiddenActive.title.trim() || "Untitled song"} (current; outside search)</option>}
+              {visibleSheets.map((sheet, index) => <option key={sheet.id} value={sheet.id}>
                 {index + 1}. {sheet.title.trim() || "Untitled song"}
               </option>)}
             </select>
