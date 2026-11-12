@@ -85,3 +85,35 @@
 .actions input[type="file"] {
   max-width: 100%;
 }
+
+.practiceControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.practiceControls :is(button, input) {
+  min-height: 44px;
+  font: inherit;
+}
+
+.practiceControls :focus-visible, .preview:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.practicing .editor { display: none; }
+.practicing .preview {
+  height: 65vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+  font-size: 1.25rem;
+}
+.practicing .line { font-size: inherit; }
+
+@media print {
+  .practicing .preview { height: auto; overflow: visible; }
+}
