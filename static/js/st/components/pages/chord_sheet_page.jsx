@@ -4,7 +4,7 @@ import {setTitle} from "st/globals"
 import Toast from "st/components/toast"
 import {
   exportChordSheet, importChordSheet, exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
-  parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
+  readEditorDraft, writeEditorDraft, parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
 } from "st/chord_sheet"
 import styles from "./chord_sheet_page.module.css"
 
@@ -15,18 +15,45 @@ export default class ChordSheetPage extends React.Component {
 
   componentDidMount() {
     setTitle("Chord Sheet Maker")
+    this.loadEditor()
+  }
+
+  loadEditor() {
+    let sheets = [], notice = ""
     try {
-      const sheets = readSongbook(localStorage)
-      const first = sheets[0]
-      this.setState({sheets, ...(first || EMPTY_SHEET), activeId: first?.id || ""})
+      sheets = readSongbook(localStorage)
     } catch {
-      this.notify("Could not load saved sheets from this browser.")
+      notice = "Could not load saved sheets from this browser."
     }
+    let draft
+    try {
+      draft = readEditorDraft(localStorage, sheets)
+      if (draft) notice = notice || "Restored your last editor draft from this browser."
+    } catch {
+      notice = notice || "Could not recover the last editor draft. Saved sheets are still available if they loaded successfully."
+    }
+    const first = sheets[0]
+    this.setState({sheets, ...(draft || first || EMPTY_SHEET),
+      activeId: draft ? draft.activeId : first?.id || ""}, () => {
+      this.editorLoaded = true
+      if (notice) this.notify(notice)
+    })
   }
 
   preview = React.createRef()
 
   componentDidUpdate(previousProps, previousState) {
+    if (this.editorLoaded && ["title", "source", "shift", "flats", "activeId"].some(key => previousState[key] !== this.state[key])) {
+      try {
+        writeEditorDraft(localStorage, this.state)
+        this.draftWriteFailed = false
+      } catch {
+        if (!this.draftWriteFailed) {
+          this.draftWriteFailed = true
+          this.notify("Could not back up your editor draft. Save or download your work before leaving.")
+        }
+      }
+    }
     if (previousState.source !== this.state.source || previousState.activeId !== this.state.activeId) {
       this.pauseScroll()
       if (this.preview.current) this.preview.current.scrollTop = 0
@@ -257,7 +284,7 @@ export default class ChordSheetPage extends React.Component {
           <textarea value={source} maxLength={SHEET_SOURCE_LIMIT} rows={12}
             onChange={event => this.setState({source: event.target.value})} />
         </label>
-        <p>Sheets and their transposition settings are saved in this browser. Saving an open sheet updates that sheet.</p>
+        <p>Your current editor draft is recovered automatically in this browser. Use Save sheet to update your songbook; drafts are not included in songbook backups. Saving an open sheet updates that sheet.</p>
         <div className={styles.actions}>
           <label>Transpose
             <select value={shift} onChange={event => this.setState({shift: Number(event.target.value)})}>
