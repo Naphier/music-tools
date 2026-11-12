@@ -11,7 +11,7 @@ import styles from "./chord_sheet_page.module.css"
 const EMPTY_SHEET = {title: "", source: "", shift: 0, flats: false}
 
 export default class ChordSheetPage extends React.Component {
-  state = {...EMPTY_SHEET, sheets: [], activeId: "", notice: "", noticeId: 0}
+  state = {...EMPTY_SHEET, sheets: [], activeId: "", notice: "", noticeId: 0, practicing: false, scrolling: false, scrollSpeed: 30}
 
   componentDidMount() {
     setTitle("Chord Sheet Maker")
@@ -22,6 +22,57 @@ export default class ChordSheetPage extends React.Component {
     } catch {
       this.notify("Could not load saved sheets from this browser.")
     }
+  }
+
+  preview = React.createRef()
+
+  componentDidUpdate(previousProps, previousState) {
+    if (previousState.source !== this.state.source || previousState.activeId !== this.state.activeId) {
+      this.pauseScroll()
+      if (this.preview.current) this.preview.current.scrollTop = 0
+    }
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this.scrollFrame)
+  }
+
+  pauseScroll = () => {
+    cancelAnimationFrame(this.scrollFrame)
+    this.scrollFrame = null
+    this.lastScrollTime = null
+    if (this.state.scrolling) this.setState({scrolling: false})
+  }
+
+  startScroll = () => {
+    if (this.state.scrolling || !this.state.practicing || !this.state.source.trim()) return
+    this.lastScrollTime = null
+    this.setState({scrolling: true}, () => {
+      this.scrollFrame = requestAnimationFrame(this.advanceScroll)
+    })
+  }
+
+  advanceScroll = time => {
+    const preview = this.preview.current
+    if (!preview || !this.state.scrolling) return
+    if (this.lastScrollTime != null) {
+      // Retain fractional pixels; cap elapsed time to avoid a jump after backgrounding.
+      this.scrollPosition += this.state.scrollSpeed * Math.min(time - this.lastScrollTime, 100) / 1000
+      preview.scrollTop = this.scrollPosition
+    } else {
+      this.scrollPosition = preview.scrollTop
+    }
+    this.lastScrollTime = time
+    if (preview.scrollTop >= preview.scrollHeight - preview.clientHeight - 1) {
+      this.pauseScroll()
+      return
+    }
+    this.scrollFrame = requestAnimationFrame(this.advanceScroll)
+  }
+
+  togglePractice = () => {
+    this.pauseScroll()
+    this.setState(({practicing}) => ({practicing: !practicing}), () => this.preview.current?.focus())
   }
 
   notify(notice) {
@@ -161,7 +212,7 @@ export default class ChordSheetPage extends React.Component {
   render() {
     const {title, source, notice, noticeId, shift, flats, sheets, activeId} = this.state
 
-    return <main className={styles.page}>
+    return <main className={`${styles.page} ${this.state.practicing ? styles.practicing : ""}`}>
       <div className={styles.editor}>
         <h1>Chord Sheet Maker</h1>
         <p>Put chords in brackets just before the words they go with, like <code>[Am]Here comes [F]the chorus</code>.
@@ -232,7 +283,29 @@ export default class ChordSheetPage extends React.Component {
         <p>Text downloads include the current edits and transposition, with chords in brackets. Downloading does not change your saved sheet.</p>
       </div>
 
-      <section className={styles.preview} aria-label="Chord sheet preview">
+      <div className={styles.practiceControls}>
+        <button type="button" disabled={!source.trim()} aria-pressed={this.state.practicing} onClick={this.togglePractice}>
+          {this.state.practicing ? "Exit practice view" : "Practice this sheet"}
+        </button>
+        {this.state.practicing && <>
+          <button type="button" aria-pressed={this.state.scrolling} onClick={this.state.scrolling ? this.pauseScroll : this.startScroll}>
+            {this.state.scrolling ? "Pause scrolling" : "Start scrolling"}
+          </button>
+          <button type="button" onClick={() => { this.pauseScroll(); this.preview.current.scrollTop = 0 }}>Back to top</button>
+          <label>Scroll speed: {this.state.scrollSpeed} px/s
+            <input type="range" min="5" max="100" step="5" value={this.state.scrollSpeed}
+              onChange={event => this.setState({scrollSpeed: Number(event.target.value)})} />
+          </label>
+          <p>Scroll manually to pause. Use Escape to leave practice view.</p>
+        </>}
+      </div>
+      <section ref={this.preview} className={styles.preview} aria-label="Chord sheet preview"
+        tabIndex={this.state.practicing ? 0 : undefined}
+        onWheel={this.pauseScroll} onTouchStart={this.pauseScroll} onPointerDown={this.pauseScroll}
+        onKeyDown={event => {
+          if (event.key === "Escape" && this.state.practicing) this.togglePractice()
+          if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) this.pauseScroll()
+        }}>
         <h2>{title.trim() || "Untitled song"}</h2>
         {source.trim() ? parseChordSheet(source, shift, flats).map((line, lineIndex) =>
           <div className={styles.line} key={lineIndex}>

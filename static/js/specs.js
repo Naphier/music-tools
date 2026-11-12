@@ -23,3 +23,5 @@ import "spec/chord_sheet_spec"
 import "spec/chord_reference_spec"
 
 import "spec/chord_midi_spec"
+
+import "./spec/chord_sheet_practice_spec"
