@@ -102,3 +102,10 @@ export function parseChordSheet(source, shift = 0, flats = false) {
     return segments
   })
 }
+
+// Use the same parsed chords as the preview, keeping lyrics and section spacing.
+export function exportChordSheet(source, shift = 0, flats = false) {
+  return parseChordSheet(source, shift, flats).map(line =>
+    line.map(({chord, lyric}) => (chord ? `[${chord}]` : "") + lyric).join("")
+  ).join("\n")
+}

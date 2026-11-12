@@ -3,7 +3,7 @@ import * as React from "react"
 import {setTitle} from "st/globals"
 import Toast from "st/components/toast"
 import {
-  exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
+  exportChordSheet, exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
   parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
 } from "st/chord_sheet"
 import styles from "./chord_sheet_page.module.css"
@@ -82,6 +82,23 @@ export default class ChordSheetPage extends React.Component {
       }
     } catch {
       this.notify("Could not download the songbook backup.")
+    }
+  }
+
+  downloadText() {
+    const {title, source, shift, flats} = this.state
+    let url
+    try {
+      url = URL.createObjectURL(new Blob([exportChordSheet(source, shift, flats)], {type: "text/plain;charset=utf-8"}))
+      const link = document.createElement("a")
+      link.href = url
+      const filename = title.trim().replace(/[^\p{L}\p{N} _-]/gu, "").slice(0, 80).trim() || "chord-sheet"
+      link.download = `${filename}.txt`
+      link.click()
+    } catch {
+      this.notify("Could not download the chord sheet text.")
+    } finally {
+      if (url) setTimeout(() => URL.revokeObjectURL(url), 1000)
     }
   }
 
@@ -174,10 +191,14 @@ export default class ChordSheetPage extends React.Component {
             </select>
           </label>
           <button type="button" disabled={!title.trim() && !source.trim()} onClick={() => this.save()}>Save sheet</button>
+          <button type="button" disabled={!source.trim()} onClick={() => this.downloadText()}>
+            Download chord sheet text
+          </button>
           <button type="button" disabled={!source.trim()} onClick={() => window.print()}>
             Print / Save PDF
           </button>
         </div>
+        <p>Text downloads include the current edits and transposition, with chords in brackets. Downloading does not change your saved sheet.</p>
       </div>
 
       <section className={styles.preview} aria-label="Chord sheet preview">

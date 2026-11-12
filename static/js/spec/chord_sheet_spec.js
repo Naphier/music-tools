@@ -1,4 +1,4 @@
-import {exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
+import {exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
 
 describe("Chord Sheet Maker", () => {
   it("keeps lyrics before the first chord and anchors slash chords to the next lyric", () => {
@@ -100,5 +100,25 @@ describe("songbook backups", () => {
       expect(() => importSongbook(backup, existing, createId)).toThrow()
     }
     expect(existing).toEqual([song])
+  })
+})
+
+describe("chord sheet text export", () => {
+  it("preserves lyrics, section labels, Unicode and chord-only lines", () => {
+    const source = "[Verse 1]\nOh [Am]héllo [G/B]world\n\n[C][G]\n"
+    expect(exportChordSheet(source)).toBe(source)
+  })
+
+  it("exports the preview key with slash basses and chosen accidentals", () => {
+    const source = "[C/E]Hello [B♭maj7/F]there [N.C.]\r\n[C6/9]"
+    const text = exportChordSheet(source, 1, true)
+    expect(text).toBe("[Db/F]Hello [Bmaj7/Gb]there [N.C.]\n[Db6/9]")
+    expect(parseChordSheet(text)).toEqual(parseChordSheet(source, 1, true))
+    expect(source).toContain("[C/E]")
+  })
+
+  it("handles empty sheets and downward octave transposition", () => {
+    expect(exportChordSheet("")).toBe("")
+    expect(exportChordSheet("[C#m7/G#]", -12)).toBe("[C#m7/G#]")
   })
 })
