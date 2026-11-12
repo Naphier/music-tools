@@ -35,7 +35,7 @@ export default class ChordReferencePage extends React.Component {
           </dl>
         </li>)}
       </ul>}
-      <p>Have a guitar fingering? <Link to="/chord-lab">Identify it in Chord Lab</Link>.</p>
+      <p>Have a guitar fingering or piano notes? <Link to="/chord-lab">Identify a chord in Chord Lab</Link>.</p>
     </main>
   }
 }

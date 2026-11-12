@@ -1,6 +1,14 @@
+import ChordLabPage from "st/components/pages/chord_lab_page"
 import {guitarVoicing, identifyChords} from "st/chord_lab"
 
 describe("Chord Lab", () => {
+  it("identifies piano inversions independently of selection order and octave doubling", () => {
+    expect(identifyChords([67, 60, 64, 72])).toEqual(["C"])
+    expect(identifyChords([67, 64, 72])).toEqual(["C/E"])
+    expect(identifyChords([72, 67, 76])).toEqual(["C/G"])
+    expect(identifyChords([48, 60, 72])).toEqual([])
+  })
+
   it("matches an open C voicing with doubled notes and a muted string", () => {
     const pitches = guitarVoicing([null, 3, 2, 0, 1, 0])
     expect(pitches.length).toBe(5)
@@ -22,5 +30,37 @@ describe("Chord Lab", () => {
     expect(identifyChords([60, 64, 67, 70, 74])).toContain("C9")
     expect(identifyChords([60, 64, 65, 67])).toEqual([])
     expect(identifyChords([])).toEqual([])
+  })
+})
+
+
+describe("Chord Lab instrument controls", () => {
+  function elements(node) {
+    if (!node || typeof node !== "object") return []
+    return [node, ...[node.props?.children].flat(Infinity).flatMap(elements)]
+  }
+
+  it("toggles piano notes, clears them, and preserves each instrument selection", () => {
+    const page = new ChordLabPage({})
+    page.setState = update => Object.assign(page.state,
+      typeof update === "function" ? update(page.state) : update)
+    const controls = () => elements(page.render())
+    const instrument = () => controls().find(node => node.type === "select")
+    const key = label => controls().find(node => node.type === "button" && node.props.children === label)
+    const frets = [null, 3, 2, 0, 1, 0]
+    page.setState({frets})
+    instrument().props.onChange({target: {value: "piano"}})
+    for (const label of ["E3", "G3", "C4"]) key(label).props.onClick()
+    expect(identifyChords(page.state.pianoNotes)).toEqual(["C/E"])
+    expect(key("E3").props["aria-pressed"]).toBeTrue()
+    key("E3").props.onClick()
+    expect(key("E3").props["aria-pressed"]).toBeFalse()
+    instrument().props.onChange({target: {value: "guitar"}})
+    expect(page.state.frets).toEqual(frets)
+    instrument().props.onChange({target: {value: "piano"}})
+    expect(page.state.pianoNotes.length).toBe(2)
+    key("Clear piano notes").props.onClick()
+    expect(page.state.pianoNotes).toEqual([])
+    expect(page.state.frets).toEqual(frets)
   })
 })
