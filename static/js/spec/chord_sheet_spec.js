@@ -200,3 +200,25 @@ describe("chord sheet text import controls", () => {
     expect(editor.state.textImportError).toBe("")
   })
 })
+
+describe("ChordPro import", () => {
+  it("imports metadata and sections without changing the written chord key", () => {
+    const sheet = importChordSheet("\uFEFF{title: My song}\r\n{artist: Player}\r\n{capo: 2}\r\n{start_of_chorus: Last chorus}\r\n[C]Hello [G/B]world\r\n{end_of_chorus}", "other.cho")
+    expect(sheet.title).toBe("My song")
+    expect(sheet.source).toBe("\nPlayer\nCapo: 2 (chords as written)\nLast chorus\n[C]Hello [G/B]world\n")
+    expect(sheet.shift).toBe(0)
+    expect(exportChordSheet(sheet.source, 2)).toContain("[D]Hello [A/C#]world")
+  })
+
+  it("supports aliases, retains unsupported content, and uses filename fallback", () => {
+    expect(importChordSheet("{soc}\n[Am]Sing\n{eoc}\n{c: Softly}\n{key: Am}", "Song.chordpro"))
+      .toEqual({title: "Song", source: "Chorus\n[Am]Sing\n\nSoftly\n{key: Am}", shift: 0, flats: false})
+    expect(importChordSheet("{t: First}\n{title: Second}\n{sov}\n{sob}").title).toBe("First")
+    expect(importChordSheet("{sov}\n{sob}").source).toBe("Verse\nBridge")
+  })
+
+  it("rejects oversized input and titles before replacing the draft", () => {
+    expect(() => importChordSheet("{title: " + "x".repeat(121) + "}")).toThrow()
+    expect(() => importChordSheet("{title: " + "x".repeat(SHEET_SOURCE_LIMIT) + "}")).toThrow()
+  })
+})

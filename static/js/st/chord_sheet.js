@@ -110,10 +110,34 @@ export function exportChordSheet(source, shift = 0, flats = false) {
   ).join("\n")
 }
 
-// Import the bracketed text format used by Download chord sheet text.
+// Import bracketed text and common ChordPro metadata/section directives.
 export function importChordSheet(source, filename = "chord-sheet.txt") {
   source = source.replace(/^\uFEFF/, "").replace(/\r\n?|\n/g, "\n")
   if (!source.trim() || source.includes("\0")) throw new Error("Choose a nonempty text chord sheet.")
-  const title = filename.replace(/\.txt$/i, "").slice(0, SHEET_TITLE_LIMIT)
+  // Validate before conversion too: directives must not bypass the input limit.
+  validateSheet({title: "", source})
+  let title = filename.replace(/\.(txt|cho|crd|chordpro|pro)$/i, "").slice(0, SHEET_TITLE_LIMIT)
+  let hasTitle = false
+  source = source.split("\n").map(line => {
+    const directive = line.match(/^\s*\{([a-z_]+)(?::\s*(.*?))?\}\s*$/i)
+    if (!directive) return line
+    const command = directive[1].toLowerCase()
+    const value = directive[2] || ""
+    if (["title", "t"].includes(command)) {
+      if (!hasTitle && value.trim()) { title = value.trim(); hasTitle = true }
+      return ""
+    }
+    if (["artist", "subtitle", "st"].includes(command)) return value
+    if (["comment", "c", "comment_italic", "ci", "comment_box", "cb"].includes(command)) return value
+    if (command === "capo") return `Capo: ${value} (chords as written)`
+    if (["start_of_chorus", "soc", "start_of_verse", "sov", "start_of_bridge", "sob"].includes(command)) {
+      const section = {soc: "Chorus", sov: "Verse", sob: "Bridge"}[command] ||
+        command.slice(9).replace(/^./, letter => letter.toUpperCase())
+      return value || section
+    }
+    if (["end_of_chorus", "eoc", "end_of_verse", "eov", "end_of_bridge", "eob"].includes(command)) return ""
+    // Keep unsupported directives visible instead of silently losing information.
+    return line
+  }).join("\n")
   return {...validateSheet({title, source}), shift: 0, flats: false}
 }
