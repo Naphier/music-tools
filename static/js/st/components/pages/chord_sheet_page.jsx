@@ -3,7 +3,7 @@ import * as React from "react"
 import {setTitle} from "st/globals"
 import Toast from "st/components/toast"
 import {
-  exportChordSheet, exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
+  exportChordSheet, importChordSheet, exportSongbook, importSongbook, SONGBOOK_BACKUP_SIZE_LIMIT,
   parseChordSheet, readSongbook, SONGBOOK_STORAGE_KEY, SHEET_TITLE_LIMIT, SHEET_SOURCE_LIMIT,
 } from "st/chord_sheet"
 import styles from "./chord_sheet_page.module.css"
@@ -102,6 +102,30 @@ export default class ChordSheetPage extends React.Component {
     }
   }
 
+  async importText(event) {
+    const input = event.currentTarget
+    const file = input.files[0]
+    input.value = ""
+    if (!file || this.state.importingText) return
+    // UTF-8 can use up to four bytes per character; validate decoded length too.
+    if (file.size > SHEET_SOURCE_LIMIT * 4 + 3) {
+      this.setState({textImportError: "Choose a text sheet with no more than 16,000 characters."})
+      return
+    }
+    this.setState({importingText: true, textImportError: ""})
+    try {
+      const sheet = importChordSheet(await file.text(), file.name)
+      if ((this.state.title || this.state.source) &&
+          !window.confirm("Replace the current editor with this text sheet? Saved sheets will be kept.")) return
+      this.setState({...sheet, activeId: ""})
+      this.notify("Text sheet opened. Save it to keep it in this browser.")
+    } catch {
+      this.setState({textImportError: "Choose a nonempty text sheet with no more than 16,000 characters and no null characters."})
+    } finally {
+      this.setState({importingText: false})
+    }
+  }
+
   async restoreBackup(event) {
     const input = event.currentTarget
     const file = input.files[0]
@@ -167,6 +191,13 @@ export default class ChordSheetPage extends React.Component {
         </div>
         <p>Backups include saved sheets only. Import keeps existing sheets and skips unchanged copies of previously imported sheets.</p>
         {this.state.importError && <p role="alert">{this.state.importError}</p>}
+        <label>Open chord sheet text
+          <input type="file" accept=".txt,text/plain" disabled={this.state.importingText}
+            onChange={event => this.importText(event)} />
+        </label>
+        <p>Open a UTF-8 text file with bracketed chords. The filename becomes its title.
+          Imported text starts in its written key as a new, unsaved sheet.</p>
+        {this.state.textImportError && <p role="alert">{this.state.textImportError}</p>}
         <label>Song title
           <input value={title} maxLength={SHEET_TITLE_LIMIT}
             onChange={event => this.setState({title: event.target.value})} />

@@ -1,4 +1,5 @@
-import {exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
+import ChordSheetPage from "st/components/pages/chord_sheet_page"
+import {importChordSheet, exportChordSheet, exportSongbook, importSongbook, parseChordSheet, readChordSheet, SHEET_SOURCE_LIMIT, readSongbook, SHEET_STORAGE_KEY, SONGBOOK_STORAGE_KEY} from "st/chord_sheet"
 
 describe("Chord Sheet Maker", () => {
   it("keeps lyrics before the first chord and anchors slash chords to the next lyric", () => {
@@ -120,5 +121,82 @@ describe("chord sheet text export", () => {
   it("handles empty sheets and downward octave transposition", () => {
     expect(exportChordSheet("")).toBe("")
     expect(exportChordSheet("[C#m7/G#]", -12)).toBe("[C#m7/G#]")
+  })
+})
+
+
+describe("chord sheet text import", () => {
+  it("round-trips exported transposed text in its written key", () => {
+    const source = exportChordSheet("[C/E]Héllo\n\n[G]", 1, true)
+    expect(importChordSheet(source, "Practice.txt")).toEqual({
+      title: "Practice", source, shift: 0, flats: false,
+    })
+  })
+
+  it("normalizes BOM and line endings without losing sections or spacing", () => {
+    expect(importChordSheet("\uFEFF[Verse 1]\r\n  [Am]Hello\r\n", "Song.TXT").source)
+      .toBe("[Verse 1]\n  [Am]Hello\n")
+  })
+
+  it("bounds title and content and rejects empty or binary text", () => {
+    expect(importChordSheet("x".repeat(SHEET_SOURCE_LIMIT), "a".repeat(200) + ".txt").title.length).toBe(120)
+    for (const source of ["", " \n", "[C]\0", "x".repeat(SHEET_SOURCE_LIMIT + 1)]) {
+      expect(() => importChordSheet(source)).toThrow()
+    }
+  })
+})
+
+
+describe("chord sheet text import controls", () => {
+  function page() {
+    const page = new ChordSheetPage({})
+    page.setState = update => Object.assign(page.state,
+      typeof update === "function" ? update(page.state) : update)
+    return page
+  }
+  function event(text, name = "Song.txt") {
+    return {currentTarget: {value: name, files: [{name, size: text.length, text: async () => text}]}}
+  }
+
+  it("opens a new unsaved sheet and allows choosing the same file again", async () => {
+    const editor = page()
+    const input = event("[C]Hello")
+    await editor.importText(input)
+    expect(input.currentTarget.value).toBe("")
+    expect(editor.state.activeId).toBe("")
+    expect(editor.state.title).toBe("Song")
+    expect(editor.state.source).toBe("[C]Hello")
+    expect(editor.state.importingText).toBeFalse()
+  })
+
+  it("keeps the editor and saved sheets intact when replacement is cancelled", async () => {
+    const previousWindow = globalThis.window
+    if (previousWindow) spyOn(previousWindow, "confirm").and.returnValue(false)
+    else globalThis.window = {confirm: () => false}
+    try {
+      const editor = page()
+      Object.assign(editor.state, {title: "Existing", source: "[G]Draft", activeId: "one", shift: 4})
+      await editor.importText(event("[C]Other"))
+      expect(editor.state.source).toBe("[G]Draft")
+      expect(editor.state.activeId).toBe("one")
+      expect(editor.state.shift).toBe(4)
+      expect(editor.state.importingText).toBeFalse()
+    } finally {
+      if (!previousWindow) delete globalThis.window
+    }
+  })
+
+  it("preserves the draft after an invalid file or read failure and permits retry", async () => {
+    const editor = page()
+    await editor.importText(event("\0"))
+    expect(editor.state.textImportError).toBeTruthy()
+    const failed = event("[C]")
+    failed.currentTarget.files[0].text = async () => { throw new Error("read failed") }
+    await editor.importText(failed)
+    expect(editor.state.source).toBe("")
+    expect(editor.state.importingText).toBeFalse()
+    await editor.importText(event("[D]Retry"))
+    expect(editor.state.source).toBe("[D]Retry")
+    expect(editor.state.textImportError).toBe("")
   })
 })

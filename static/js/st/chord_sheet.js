@@ -109,3 +109,11 @@ export function exportChordSheet(source, shift = 0, flats = false) {
     line.map(({chord, lyric}) => (chord ? `[${chord}]` : "") + lyric).join("")
   ).join("\n")
 }
+
+// Import the bracketed text format used by Download chord sheet text.
+export function importChordSheet(source, filename = "chord-sheet.txt") {
+  source = source.replace(/^\uFEFF/, "").replace(/\r\n?|\n/g, "\n")
+  if (!source.trim() || source.includes("\0")) throw new Error("Choose a nonempty text chord sheet.")
+  const title = filename.replace(/\.txt$/i, "").slice(0, SHEET_TITLE_LIMIT)
+  return {...validateSheet({title, source}), shift: 0, flats: false}
+}
