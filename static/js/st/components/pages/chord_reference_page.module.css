@@ -18,7 +18,7 @@
   font: inherit;
 }
 
-.page input:focus-visible {
+.page :is(input, button):focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
@@ -47,4 +47,16 @@
 
 .results dd {
   margin: 0 0 4px;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestions button {
+  min-height: 44px;
+  padding: 6px 12px;
+  font: inherit;
 }

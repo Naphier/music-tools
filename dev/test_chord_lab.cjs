@@ -1,4 +1,4 @@
-// Run the browser-independent Chord Lab specs without a backend or browser.
+// Run the browser-independent chord tool specs without a backend or browser.
 const {mkdtempSync, rmSync} = require('node:fs')
 const {tmpdir} = require('node:os')
 const {join, resolve} = require('node:path')
@@ -9,7 +9,7 @@ const outdir = mkdtempSync(join(tmpdir(), 'chord-lab-specs-'))
 try {
   esbuild.buildSync({
     absWorkingDir: root,
-    entryPoints: ['static/js/spec/chord_lab_spec.js', 'static/js/spec/chord_midi_spec.js'],
+    entryPoints: ['static/js/spec/chord_lab_spec.js', 'static/js/spec/chord_midi_spec.js', 'static/js/spec/chord_reference_spec.js'],
     bundle: true, outdir, platform: 'node', format: 'cjs',
     nodePaths: [join(root, 'static/js')], loader: {'.css': 'empty'},
   })
@@ -28,6 +28,7 @@ try {
   })
   require(join(outdir, 'chord_lab_spec.js'))
   require(join(outdir, 'chord_midi_spec.js'))
+  require(join(outdir, 'chord_reference_spec.js'))
   env.execute()
 } catch (error) {
   rmSync(outdir, {recursive: true, force: true})

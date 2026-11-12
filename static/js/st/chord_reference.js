@@ -26,6 +26,36 @@ const QUALITIES = {
   M9: ["Major ninth", "maj9", "1 3 5 7 9", "M9 Δ9"],
 }
 
+// Descriptors are discovery hints, not fixed emotional meanings. Context and
+// voicing change how a chord sounds. Each term must match explicitly.
+const DESCRIPTORS = {
+  M: ["bright", "happy", "stable"],
+  m: ["dark", "sad"],
+  dim: ["tense", "unstable"],
+  dimM7: ["tense", "mysterious"],
+  dim7: ["tense", "dramatic", "unstable"],
+  aug: ["dreamy", "unstable"],
+  augM7: ["dreamy", "mysterious"],
+  M6: ["warm", "jazzy"],
+  m6: ["dark", "jazzy"],
+  M7: ["dreamy", "warm", "jazzy"],
+  7: ["blues", "tense"],
+  m7: ["mellow", "jazzy"],
+  m7b5: ["dark", "tense", "jazzy"],
+  mM7: ["mysterious", "tense"],
+  Q: ["open", "jazzy"],
+  Qb4: ["tense", "jazzy"],
+  sus2: ["open", "airy"],
+  sus4: ["open", "unresolved"],
+  add9: ["bright", "airy"],
+  madd9: ["sad", "airy"],
+  9: ["blues", "funk", "jazzy"],
+  m9: ["mellow", "jazzy"],
+  M9: ["dreamy", "warm", "jazzy"],
+}
+const DESCRIPTOR_ALIASES = {jazz: "jazzy", bluesy: "blues", funky: "funk"}
+export const CHORD_SEARCH_EXAMPLES = ["dreamy", "C jazzy", "A dark", "blues", "open", "tense"]
+
 const LETTERS = "CDEFGAB"
 const NATURAL_PITCHES = [0, 2, 4, 5, 7, 9, 11]
 const ROOTS = [...CHORD_ROOTS, "Cb", "C#", "D#", "E#", "Fb", "Gb", "G#", "A#", "B#"]
@@ -49,6 +79,7 @@ function buildChord(root, shape, steps) {
   })
   return {
     symbol: display(root + suffix), quality, formula: display(formula), notes, root,
+    descriptors: DESCRIPTORS[shape] || [],
     symbols: new Set([suffix, ...aliases.split(" ").filter(Boolean)]),
   }
 }
@@ -88,8 +119,13 @@ export function searchChords(query) {
   const candidates = CATALOG.filter(chord => {
     if (root && chord.root !== root[1].toUpperCase() + (root[2] ?? "")) return false
     const quality = chord.quality.toLowerCase().split(" ")
-    return terms.every(term => quality.some(word => word === term || ORDINALS[word] === term))
+    return terms.every(term => quality.some(word => word === term || ORDINALS[word] === term) ||
+      chord.descriptors.includes(DESCRIPTOR_ALIASES[term] || term))
   })
+  const descriptive = terms.some(term => Object.values(DESCRIPTORS).some(words =>
+    words.includes(DESCRIPTOR_ALIASES[term] || term)))
+  if (descriptive) return candidates
+
   const exactQuality = candidates.filter(chord => chord.quality.split(" ").length === terms.length)
   return exactQuality.length ? exactQuality : candidates
 }
