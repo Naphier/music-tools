@@ -1,5 +1,9 @@
 import * as React from "react"
 
+import {Link} from "react-router-dom"
+import GuitarFretboard from "st/components/guitar_fretboard"
+import ChordDiagram from "st/components/chord_diagram"
+import {assignFingers} from "st/guitar_chords"
 import ChordMidi from "st/chord_midi"
 import {trigger} from "st/events"
 import {setTitle} from "st/globals"
@@ -52,6 +56,10 @@ export default class ChordLabPage extends React.Component {
   componentDidMount() {
     this.props.midiInput?.addEventListener("statechange", this.handleInputState)
     setTitle("Chord Lab")
+    const incoming = new URLSearchParams(window.location.search).get("frets")
+    if (incoming && /^(x|[0-9]|1[0-2])(,(x|[0-9]|1[0-2])){5}$/.test(incoming)) {
+      this.setState({frets: incoming.split(",").map(fret => fret === "x" ? null : Number(fret))})
+    }
   }
 
   render() {
@@ -61,7 +69,8 @@ export default class ChordLabPage extends React.Component {
     const matches = identifyChords(pitches)
 
     return <main className={styles.page}>
-      <h1>Chord Lab</h1>
+      <div className={styles.page_heading}><div><h1>Chord Lab</h1>
+        <p>Build a voicing. Discover the chord.</p></div><Link to="/chord-reference">Search chords →</Link></div>
       <label>Instrument
         <select value={instrument} onChange={event => { this.resetMidi(); this.setState({instrument: event.target.value}) }}>
           <option value="guitar">Guitar</option>
@@ -70,8 +79,8 @@ export default class ChordLabPage extends React.Component {
         </select>
       </label>
       {instrument === "guitar" ? <>
-      <p>Choose an open string or fret 1–12 for each sounding string in standard tuning. Leave unused strings muted.</p>
-
+      <GuitarFretboard frets={frets} onChange={frets => this.setState({frets})} />
+      <details className={styles.precise}><summary>Enter frets by string</summary>
       <div className={styles.strings}>
         {STRINGS.map((string, index) => <label key={string}>
           {string}
@@ -89,6 +98,7 @@ export default class ChordLabPage extends React.Component {
           </select>
         </label>)}
       </div>
+      </details>
 
       <div className={styles.actions}>
         <label>Try an example
@@ -128,6 +138,8 @@ export default class ChordLabPage extends React.Component {
         </div>
       </>}
 
+      <div className={styles.analysis}>
+      {instrument === "guitar" && <ChordDiagram frets={frets} fingers={assignFingers(frets)} name={matches[0] || "Your voicing"} />}
       <section aria-live="polite">
         <h2>Chord matches</h2>
         {notes.length > 0 && <p>Notes from the bass up: {notes.join(" · ")}</p>}
@@ -137,6 +149,7 @@ export default class ChordLabPage extends React.Component {
             ? <p>No exact match in the chord library. Check for an extra or missing note.</p>
             : <ul>{matches.map(match => <li key={match}>{match}</li>)}</ul>}
       </section>
+      </div>
       <p>Matches use every distinct note you enter. A slash shows the bass note when it differs from the chord root.</p>
     </main>
   }
