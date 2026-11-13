@@ -1,134 +1,85 @@
 .header {
     box-sizing: border-box;
-    padding: 0 24px;
-    height: 50px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border-color);
     position: fixed;
     inset: 0 0 auto;
-    z-index: calc(var(--upper-layer-z-index) - 1);
+    height: 50px;
     display: flex;
     align-items: center;
-    gap: 20px;
-
-    .user_links { flex: 1; min-width: 0; }
-
-    a {
-        color: var(--body-color);
-        text-decoration: none;
-        border-radius: 8px;
-        &:hover { background: var(--surface-muted); }
-        &:global(.active) {
-            background: var(--surface-muted);
-            color: var(--button-color);
-            font-weight: bold;
-        }
-    }
-
-    a:focus-visible, button:focus-visible {
-        outline: 2px solid var(--button-color);
-        outline-offset: 3px;
-    }
-
-    .menu_toggle > button {
-        min-height: 36px;
-        padding: 6px 14px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        background: var(--surface-muted);
-        color: var(--body-color);
-        cursor: pointer;
-        svg { fill: currentColor; margin-left: 8px; }
-    }
-
-    .navigation_menu {
-        position: fixed;
-        inset: 0;
-        margin: auto;
-        padding: 16px;
-        width: 760px;
-        max-width: calc(100vw - 32px);
-        max-height: calc(100dvh - 32px);
-        box-sizing: border-box;
-        color: var(--body-color);
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        box-shadow: 0 20px 80px rgb(0 0 0 / 25%);
-
-        /* The shared dialog supplies focus trapping, Escape and focus return. */
-        > div {
-            box-sizing: border-box;
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-            padding: 8px;
-            border: 0;
-            box-shadow: none;
-            background: transparent;
-        }
-
-        .menu_heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 20px;
-            h2 { margin: 0; font-size: 22px; }
-            button { min-height: 40px; border-radius: 8px; cursor: pointer; }
-        }
-
-        .account_area {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px;
-            a { padding: 10px 12px; overflow-wrap: anywhere; }
-        }
-
-        .midi_button_wrapper { margin-top: 16px; }
-
-        .tool_groups {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 24px;
-            margin-top: 24px;
-            h3 {
-                margin: 0 0 12px;
-                font-size: 13px;
-                color: var(--text-muted);
-                font-weight: 600;
-            }
-            ul { list-style: none; padding: 0; margin: 0; }
-            li + li { margin-top: 4px; }
-            a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; }
-        }
-    }
+    gap: 16px;
+    padding: 0 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-color);
+    z-index: calc(var(--upper-layer-z-index) - 1);
 }
-
+.menu_toggle {
+    display: grid;
+    place-items: center;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px;
+    background: transparent;
+    color: var(--body-color);
+    border: 0;
+    box-shadow: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.logo_link { text-decoration: none; }
 .wordmark {
-    display: block;
     font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.7px;
-    line-height: 1.1;
-    white-space: nowrap;
     color: var(--body-color);
     span { color: var(--button-color); }
 }
-
-@media (max-width: 760px) {
-    .header { padding: 0 12px; gap: 12px; }
-    .wordmark {
-        font-size: 17px;
-        span { display: block; font-size: 12px; letter-spacing: 1px; }
+.sidebar {
+    position: fixed;
+    box-sizing: border-box;
+    inset: 50px auto 0 0;
+    width: 260px;
+    max-width: calc(100vw - 56px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--surface);
+    border-right: 1px solid var(--border-color);
+    padding: 20px 12px;
+    color: var(--body-color);
+    a {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 12px;
+        text-decoration: none;
+        color: var(--body-color);
+        border-radius: 8px;
+        overflow-wrap: anywhere;
+        &:hover { background: var(--surface-muted); }
+        &:global(.active) { background: var(--surface-muted); color: var(--button-color); font-weight: 700; }
     }
-    .desktop_midi { display: none; }
-    .header .navigation_menu .tool_groups { grid-template-columns: 1fr; gap: 20px; }
+    h3 { margin: 24px 12px 8px; color: var(--text-muted); font-size: 12px; letter-spacing: .04em; }
+    ul { list-style: none; margin: 0; padding: 0; }
+    .account_area { display: flex; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+    .midi_button_wrapper { margin: 16px 12px; }
+    .theme_section { border-top: 1px solid var(--border-color); margin-top: 24px; }
 }
-
-@media (max-width: 380px) {
-    .header { gap: 8px; padding: 0 8px; }
-    .header .menu_toggle > button { padding: 6px 8px; font-size: 12px; }
+.header :is(a, button):focus-visible { outline: 2px solid var(--button-color); outline-offset: 2px; }
+.backdrop { display: none; }
+@media (min-width: 761px) {
+    :global(.page_layout):has(.sidebar) { padding-left: 260px; }
+}
+@media (max-width: 760px) {
+    .backdrop {
+        display: block;
+        position: fixed;
+        inset: 50px 0 0;
+        background: var(--modal-backdrop);
+        border: 0;
+        border-radius: 0;
+    }
+    .sidebar { box-shadow: 12px 0 32px rgb(0 0 0 / 15%); }
+    .wordmark { font-size: 18px; }
+}
+@media print {
+    .header { display: none; }
+    :global(.page_layout):has(.sidebar) { padding-left: 0; }
 }
