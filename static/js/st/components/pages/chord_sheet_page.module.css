@@ -117,3 +117,23 @@
 @media print {
   .practicing .preview { height: auto; overflow: visible; }
 }
+
+@media screen {
+  .editor, .preview {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: clamp(16px, 3vw, 28px);
+  }
+
+  .editor h1 { margin-top: 0; letter-spacing: -0.6px; }
+  .editor .actions + .actions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .editor label { min-width: 0; }
+  .editor :is(input, select, textarea) { max-width: 100%; box-sizing: border-box; }
+  .preview h2 { margin-top: 0; }
+}
