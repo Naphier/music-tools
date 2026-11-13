@@ -152,7 +152,8 @@ class Layout extends React.Component {
         </Route>
 
         <Route path="/drum-machine" element={<DrumMachinePage {...pageProps} />} />
-        <Route path="/guitar-scales" element={<GuitarScalesPage {...pageProps} />} />
+        <Route path="/scales" element={<GuitarScalesPage {...pageProps} />} />
+        <Route path="/guitar-scales" element={<Navigate replace to="/scales" />} />
         <Route path="/chord-lab" element={<ChordLabPage {...pageProps} />} />
         <Route path="/chord-sheet" element={<ChordSheetPage {...pageProps} />} />
         <Route path="/chord-reference" element={<ChordReferencePage {...pageProps} />} />

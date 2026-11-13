@@ -35,6 +35,9 @@ export function guitarScale(root, type, lastFret) {
     degree: index + 1,
     pitchClass: parseNote(note) % 12,
   }))
+  const rootPitch = notes[0].pitchClass
+  const intervals = ["1", "♭2", "2", "♭3", "3", "4", "♭5", "5", "♭6", "6", "♭7", "7"]
+  notes.forEach(note => { note.interval = intervals[(note.pitchClass - rootPitch + 12) % 12] })
   const byPitch = new Map(notes.map(note => [note.pitchClass, note]))
   const frets = Array.from({length: lastFret + 1}, (_, fret) => fret)
   const strings = STANDARD_TUNING.map((open, index) => ({

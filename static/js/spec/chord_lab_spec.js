@@ -1,3 +1,4 @@
+import PianoVisual from "st/components/piano_visual"
 import ChordLabPage from "st/components/pages/chord_lab_page"
 import {guitarVoicing, identifyChords} from "st/chord_lab"
 
@@ -50,11 +51,12 @@ describe("Chord Lab instrument controls", () => {
     const frets = [null, 3, 2, 0, 1, 0]
     page.setState({frets})
     instrument().props.onChange({target: {value: "piano"}})
-    for (const label of ["E3", "G3", "C4"]) key(label).props.onClick()
+    const piano = () => controls().find(node => node.type === PianoVisual)
+    for (const pitch of [52, 55, 60]) piano().props.onToggle(pitch)
     expect(identifyChords(page.state.pianoNotes)).toEqual(["C/E"])
-    expect(key("E3").props["aria-pressed"]).toBeTrue()
-    key("E3").props.onClick()
-    expect(key("E3").props["aria-pressed"]).toBeFalse()
+    expect(piano().props.selected).toContain(52)
+    piano().props.onToggle(52)
+    expect(piano().props.selected).not.toContain(52)
     instrument().props.onChange({target: {value: "guitar"}})
     expect(page.state.frets).toEqual(frets)
     instrument().props.onChange({target: {value: "piano"}})

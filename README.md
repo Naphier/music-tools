@@ -167,3 +167,24 @@ keeps the beat running; loading a groove preset retains your selected set.
 Music Tools builds on [leafo/sightreading.training](https://github.com/leafo/sightreading.training) by Leaf Corcoran. Original attribution is retained in the source.
 
 The default branch in this fork is `main`; upstream still uses `master`. When incorporating upstream changes, fetch `upstream`, then merge `upstream/master` into a review branch based on `main` and open a pull request targeting this fork’s `main`. The branch names do not need to match.
+
+## Scales and chord exploration
+
+**Scales** (`/scales`, with `/guitar-scales` retained as a redirect) displays a
+0–12 guitar fretboard or a two-octave piano from C3 to C5. Choose notes, intervals,
+or both; all occurrences of each scale tone are highlighted.
+
+Chord Lab's upper-right gear opens the instrument and display options. Its
+fretboard has a reset icon, and chord labels can show notes or degrees. Exact
+matches offer common, moveable, and less-common voicings; near matches list notes
+to add or remove and offer suggested shapes. Applying a voicing switches to guitar
+without clearing the separate piano selection. Chord Reference also groups and
+links multiple shapes to the Lab.
+
+Scales, Chord Lab, and Chord Reference automatically save their settings and
+selections locally on this browser. They do not sync with accounts or other
+devices. Live MIDI notes, open options drawers, and expanded diagram groups are
+not restored. Corrupt settings fall back to defaults; denied writes show a
+transient warning and retry on the next change.
+
+See the [review checklist](docs/review/scales-chord-usability.md) for manual acceptance.
