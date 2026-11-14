@@ -51,3 +51,18 @@ export function identifyChords(pitches) {
       return rootPitch === bass ? symbol : `${symbol}/${chordNote(bass)}`
     })
 }
+
+export function suggestChords(pitches, limit = 5) {
+  const actual = new Set(pitches.map(pitchClass))
+  if (actual.size < 2 || identifyChords(pitches).length) return []
+  const bass = pitchClass(Math.min(...pitches))
+  return CHORDS.map(chord => {
+    const missing = chord.classes.filter(note => !actual.has(note))
+    const extra = [...actual].filter(note => !chord.classes.includes(note))
+    return {...chord, missing, extra, distance: missing.length + extra.length,
+      overlap: chord.classes.length - missing.length}
+  }).filter(chord => chord.distance > 0 && chord.distance <= 2 && chord.overlap >= 2)
+    .sort((a, b) => a.distance - b.distance || b.overlap - a.overlap || Number(b.rootPitch === bass) - Number(a.rootPitch === bass))
+    .slice(0, limit).map(chord => ({name: chord.name.replace("#", "♯").replaceAll("b", "♭"),
+      missing: chord.missing.map(chordNote), extra: chord.extra.map(chordNote)}))
+}

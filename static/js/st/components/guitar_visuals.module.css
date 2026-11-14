@@ -14,8 +14,10 @@
 .string, .fret_numbers { display: grid; grid-template-columns: 48px repeat(12, minmax(52px, 1fr)); }
 .string {
     background: var(--surface-muted);
-    button {
+    > :is(button, div) {
         position: relative;
+        display: grid;
+        place-items: center;
         min-height: 44px;
         padding: 0;
         border: 0;
@@ -30,9 +32,12 @@
         &:focus-visible { z-index: 1; outline: 3px solid var(--button-color); outline-offset: -3px; }
     }
     .open { border-right: 5px solid var(--body-color); background: var(--surface); &::before { display: none; } }
-    &:nth-child(n + 4) button::before { height: 2px; }
+    &:nth-child(n + 4) > :is(button, div)::before { height: 2px; }
 }
 .note, .selected_note { position: relative; display: inline-grid; place-items: center; min-width: 30px; min-height: 30px; border-radius: 50%; font-size: 12px; }
 .note:not(:empty) { background: var(--surface); }
 .selected_note { background: var(--button-color); color: white; font-weight: 700; box-shadow: 0 0 0 2px var(--surface); }
 .fret_numbers span { text-align: center; font-size: 12px; padding-top: 8px; small { display: block; line-height: 1; } }
+
+.root_note { outline: 2px solid var(--body-color); outline-offset: 2px; }
+.reset { display: grid; place-items: center; width: 44px; height: 44px; padding: 8px; border-radius: 8px; cursor: pointer; }

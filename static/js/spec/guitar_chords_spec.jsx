@@ -67,7 +67,7 @@ describe("Visual guitar input", () => {
     const board = elements(page.render()).find(node => node.type === GuitarFretboard)
     board.props.onChange([null, 3, 2, 0, 1, 0])
     expect(page.state.frets).toEqual([null, 3, 2, 0, 1, 0])
-    expect(elements(page.render()).some(node => node.type === "li" && node.props.children === "C")).toBeTrue()
+    expect(elements(page.render()).some(node => node.type === "button" && node.props.children === "C")).toBeTrue()
     expect(page.state.pianoNotes).toEqual([])
   })
 })

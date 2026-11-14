@@ -48,30 +48,31 @@ const MOVEABLE = [
   [[null, 0, 2, 1, 2, 0], [null, 1, 3, 2, 4, 1]],
 ]
 const cache = new Map()
-export function guitarChordVoicings(notes, limit = 4) {
+export function guitarChordVoicings(notes, limit = 4, bassNote = notes[0]) {
   const classes = [...new Set(notes.map(noteClass))]
   if (classes.includes(null) || classes.length < 3 || classes.length > 6) return []
-  const key = classes.join(",")
+  const bassClass = noteClass(bassNote)
+  const key = `${classes.join(",")}:${bassClass}`
   if (cache.has(key)) return cache.get(key).slice(0, limit)
   const candidates = []
   const seen = new Set()
-  const add = (frets, fingers) => {
+  const add = (frets, fingers, source = "Less common") => {
     const pitches = frets.flatMap((fret, index) => fret === null ? [] : [OPEN_PITCHES[index] + fret])
     const actual = new Set(pitches.map(pitch => pitch % 12))
-    if (actual.size !== classes.length || classes.some(pc => !actual.has(pc)) || Math.min(...pitches) % 12 !== classes[0]) return
+    if (actual.size !== classes.length || classes.some(pc => !actual.has(pc)) || Math.min(...pitches) % 12 !== bassClass) return
     const signature = frets.join(",")
     if (seen.has(signature)) return
     seen.add(signature)
-    candidates.push({frets, fingers, score: Math.max(...frets.map(f => f ?? 0)) * 2 + frets.filter(f => f === null).length})
+    candidates.push({frets, fingers, category: frets.every(fret => fret !== 0) ? "Moveable" : source, score: Math.max(...frets.map(f => f ?? 0)) * 2 + frets.filter(f => f === null).length})
   }
-  COMMON.forEach(([frets, fingers]) => add(frets, fingers))
+  COMMON.forEach(([frets, fingers]) => add(frets, fingers, "Common"))
   // Familiar open shapes are offered before moveable and generated forms.
   const familiar = candidates.length
   for (const [shape, fingers] of MOVEABLE) {
     for (let shift = 0; shift <= 10; shift++) {
       const frets = shape.map(fret => fret === null ? null : fret + shift)
       if (Math.max(...frets) > 12) continue
-      add(frets, shift ? fingers : assignFingers(frets))
+      add(frets, shift ? fingers : assignFingers(frets), "Common")
     }
   }
   const curated = candidates.length
@@ -89,7 +90,11 @@ export function guitarChordVoicings(notes, limit = 4) {
     }
     visit([], 0)
   }
-  const ranked = [...candidates.slice(0, familiar), ...candidates.slice(familiar, curated).sort((a, b) => a.score - b.score), ...candidates.slice(curated).sort((a, b) => a.score - b.score)].slice(0, 12)
+  const ordered = [...candidates.slice(0, familiar), ...candidates.slice(familiar, curated).sort((a, b) => a.score - b.score), ...candidates.slice(curated).sort((a, b) => a.score - b.score)]
+  const groups = ["Common", "Moveable", "Less common"].map(category => ordered.filter(shape => shape.category === category))
+  // Round-robin keeps higher-position and moveable shapes visible even with a small limit.
+  const ranked = []
+  for (let index = 0; index < 8; index++) groups.forEach(group => { if (group[index]) ranked.push(group[index]) })
   cache.set(key, ranked)
   return ranked.slice(0, limit)
 }
