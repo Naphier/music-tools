@@ -1,7 +1,4 @@
-# PR #56 — Feature review checklist
-
-PR: https://github.com/Naphier/music-tools/pull/56  
-Branch: `codex/sidebar-and-chord-diagrams` → `dev`
+# Dev 2026-11-13 Feature Checklist
 
 Check a box only after manually verifying the behavior. All manual items below start unchecked. Record failures and screenshots in the PR.
 
