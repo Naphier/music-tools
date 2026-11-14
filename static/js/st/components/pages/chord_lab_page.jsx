@@ -13,7 +13,7 @@ import {labState, readToolState, persistToolPage} from "st/tool_preferences"
 import ChordMidi from "st/chord_midi"
 import {trigger} from "st/events"
 import {setTitle} from "st/globals"
-import {chordNote, guitarVoicing, identifyChords, suggestChords} from "st/chord_lab"
+import {chordNote, guitarVoicing, identifyChordMatches, suggestChords} from "st/chord_lab"
 import styles from "./chord_lab_page.module.css"
 
 export default class ChordLabPage extends React.Component {
@@ -59,14 +59,36 @@ export default class ChordLabPage extends React.Component {
     }
   }
 
+  renderChordTabs(chords, selected, field, pitches) {
+    return <div className={styles.match_list} role="tablist" aria-label={field === "selectedMatch" ? "Chord matches" : "Suggested chords"}>
+      {chords.map((chord, index) => {
+        const tones = chordTones(chord.name).filter(tone => !chord.omittedFifth || pitches?.some(pitch => pitch % 12 === tone.pitchClass))
+        return <button key={chord.name} type="button" role="tab" aria-selected={selected === chord.name}
+          tabIndex={selected === chord.name ? 0 : -1}
+          onClick={() => this.setState({[field]: chord.name})}
+          onKeyDown={event => {
+            const move = {ArrowRight: (index + 1) % chords.length, ArrowLeft: (index + chords.length - 1) % chords.length, Home: 0, End: chords.length - 1}[event.key]
+            if (move === undefined) return
+            event.preventDefault()
+            this.setState({[field]: chords[move].name})
+            event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[move].focus()
+          }}>
+          <strong>{chord.name}</strong><span>{tones.map(tone => tone.name).join(" · ")}</span>{chord.omittedFifth && <small>no 5</small>}
+        </button>
+      })}
+    </div>
+  }
+
   render() {
     const {frets, instrument, pianoNotes, midiNotes, labels, showAllNotes} = this.state
     const pitches = instrument === "guitar" ? guitarVoicing(frets) : instrument === "midi" ? midiNotes : pianoNotes
     const notes = [...new Set([...pitches].sort((a, b) => a - b).map(chordNote))]
-    const matches = identifyChords(pitches)
+    const matchDetails = identifyChordMatches(pitches)
+    const matches = matchDetails.map(match => match.name)
     const selected = matches.includes(this.state.selectedMatch) ? this.state.selectedMatch : matches[0]
     const tones = chordTones(selected, pitches)
     const suggestions = matches.length ? [] : suggestChords(pitches)
+    const activeSuggestion = suggestions.find(item => item.name === this.state.selectedSuggestion) || suggestions[0]
     const chooseVoicing = frets => this.setState({frets: [...frets], instrument: "guitar"})
     return <main className={styles.page}>
       <div className={styles.page_heading}><div><h1>Chord Lab</h1><p>Build a voicing. Discover the chord.</p></div>
@@ -76,9 +98,12 @@ export default class ChordLabPage extends React.Component {
             <option value="guitar">Guitar</option><option value="piano">Piano</option><option value="midi">MIDI keyboard</option>
           </select></label>
           <label><input type="checkbox" checked={showAllNotes} onChange={event => this.setState({showAllNotes: event.target.checked})} />Show all fretboard notes</label>
-          <label>Chord labels<select value={labels} onChange={event => this.setState({labels: event.target.value})}>
+          <label>Fretboard labels<select value={labels} onChange={event => this.setState({labels: event.target.value})}>
             <option value="notes">Chord notes</option><option value="degrees">Chord degrees</option><option value="both">Notes and degrees</option>
           </select></label>
+          {instrument === "guitar" && <label>Diagram labels<select value={this.state.diagramLabels} onChange={event => this.setState({diagramLabels: event.target.value})}>
+            <option value="fingers">Fingers</option><option value="notes">Notes</option><option value="intervals">Intervals</option><option value="both">Notes and intervals</option>
+          </select></label>}
         </ToolOptions></div>
       </div>
       {instrument === "guitar" ? <GuitarFretboard frets={frets} tones={tones} labels={labels} showAllNotes={showAllNotes}
@@ -97,24 +122,20 @@ export default class ChordLabPage extends React.Component {
         </>}
       {labels !== "notes" && <p>Degrees relative to {selected ? `${selected.split("/")[0]} root` : `the current bass (${notes[0] || "select a note"})`}.</p>}
       <div className={styles.analysis}>
-        {instrument === "guitar" && <ChordDiagram frets={frets} fingers={assignFingers(frets)} name={selected || "Your voicing"} />}
+        {instrument === "guitar" && <ChordDiagram frets={frets} fingers={assignFingers(frets)} name={selected || "Your voicing"} labels={this.state.diagramLabels} />}
         <section aria-live="polite"><h2>Chord matches</h2>
-          {notes.length > 0 && <p>Notes from the bass up: {notes.join(" · ")}</p>}
-          {matches.length ? <ul className={styles.match_list}>{matches.map(match => <li key={match}>
-            <button type="button" aria-pressed={selected === match} onClick={() => this.setState({selectedMatch: match})}>{match}</button>
-          </li>)}</ul> : <p>{notes.length < 3 ? "Select at least three different notes to identify a chord." : "No exact match. Explore the closest chords below."}</p>}
+          {matches.length ? this.renderChordTabs(matchDetails, selected, "selectedMatch", pitches) : <p>{notes.length < 3 ? "Select at least three different notes to identify a chord." : "No direct match."}</p>}
         </section>
       </div>
-      {selected && <section className={styles.variants}><h2>{selected} voicings</h2>
-        <ChordVoicings notes={tones.map(tone => tone.name)} bassNote={selected.split("/")[1]} name={selected} onChoose={chooseVoicing} />
+      {instrument === "guitar" && selected && <section className={styles.variants} id="match-voicings" role="tabpanel" aria-label={`${selected} voicings`}>
+        <ChordVoicings notes={tones.map(tone => tone.name)} bassNote={selected.split("/")[1]} name={selected} labels={this.state.diagramLabels} onChoose={chooseVoicing} />
       </section>}
-      {suggestions.length > 0 && <section className={styles.variants}><h2>Closest chord suggestions</h2><p>These are near matches, not identifications of your current notes.</p>
-        {suggestions.map(suggestion => <div key={suggestion.name} className={styles.suggestion}>
-          <h3>{suggestion.name}</h3><p>{suggestion.missing.length ? `Add ${suggestion.missing.join(", ")}. ` : ""}{suggestion.extra.length ? `Remove ${suggestion.extra.join(", ")}.` : ""}</p>
-          <details><summary>Explore suggested voicings</summary><ChordVoicings notes={chordTones(suggestion.name).map(tone => tone.name)} name={suggestion.name} onChoose={chooseVoicing} /></details>
-        </div>)}
+      {suggestions.length > 0 && <section className={styles.variants}>
+        <h2>Suggestions</h2>
+        {this.renderChordTabs(suggestions, activeSuggestion.name, "selectedSuggestion")}
+        <p>{activeSuggestion.missing.length ? `Add ${activeSuggestion.missing.join(", ")}. ` : ""}{activeSuggestion.extra.length ? `Remove ${activeSuggestion.extra.join(", ")}.` : ""}</p>
+        {instrument === "guitar" && <ChordVoicings notes={chordTones(activeSuggestion.name).map(tone => tone.name)} name={activeSuggestion.name} labels={this.state.diagramLabels} onChoose={chooseVoicing} />}
       </section>}
-      <p>Exact matches use every distinct note you enter. Slash symbols show a different bass note.</p>
       <Toast message={this.state.storageWarning} onDismiss={() => this.setState({storageWarning: null})} />
     </main>
   }

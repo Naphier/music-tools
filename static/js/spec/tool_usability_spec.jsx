@@ -110,7 +110,7 @@ describe("Scale and chord instrument displays", () => {
     const page = new ChordLabPage({})
     const nodes = elements(page.render())
     const options = nodes.find(node => node.type === ToolOptions)
-    expect(elements(options).filter(node => node.type === "select").length).toBe(2)
+    expect(elements(options).filter(node => node.type === "select").length).toBe(3)
     expect(elements(options).some(node => node.type === "input" && node.props.type === "checkbox")).toBeTrue()
     expect(nodes.some(node => node.props?.children === "Try an example")).toBeFalse()
     expect(nodes.some(node => node.props?.children === "Enter frets by string")).toBeFalse()

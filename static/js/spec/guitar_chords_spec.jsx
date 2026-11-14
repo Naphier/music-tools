@@ -23,14 +23,20 @@ describe("Guitar chord diagrams and voicings", () => {
     }
   })
 
-  it("includes every chord tone, no extra tones, and root bass for all search qualities", () => {
+  it("keeps defining tones, permits only flagged natural-fifth omissions, and retains root bass", () => {
     const chords = ["major", "minor", "seventh", "suspended", "diminished", "augmented", "quartal", "ninth"].flatMap(searchChords)
     for (const chord of chords) {
       const shapes = guitarChordVoicings(chord.notes)
       const expected = [...new Set(chord.notes.map(noteClass))].sort()
       for (const shape of shapes) {
         const pitches = shape.frets.flatMap((fret, i) => fret === null ? [] : [OPEN_PITCHES[i] + fret])
-        expect([...new Set(pitches.map(pitch => pitch % 12))].sort()).withContext(chord.symbol).toEqual(expected)
+        const fifth = (noteClass(chord.notes[0]) + 7) % 12
+        if (shape.omittedFifth) {
+          expect(expected).toContain(fifth)
+          expect(expected.length).toBeGreaterThanOrEqual(4)
+        }
+        expect([...new Set(pitches.map(pitch => pitch % 12))].sort()).withContext(chord.symbol)
+          .toEqual(shape.omittedFifth ? expected.filter(note => note !== fifth) : expected)
         expect(Math.min(...pitches) % 12).toBe(noteClass(chord.notes[0]))
         expect(shape.frets.every(fret => fret === null || (fret >= 0 && fret <= 12))).toBeTrue()
       }
@@ -67,7 +73,7 @@ describe("Visual guitar input", () => {
     const board = elements(page.render()).find(node => node.type === GuitarFretboard)
     board.props.onChange([null, 3, 2, 0, 1, 0])
     expect(page.state.frets).toEqual([null, 3, 2, 0, 1, 0])
-    expect(elements(page.render()).some(node => node.type === "button" && node.props.children === "C")).toBeTrue()
+    expect(elements(page.render()).some(node => node.type === "button" && node.props.role === "tab" && node.props["aria-selected"] === true)).toBeTrue()
     expect(page.state.pianoNotes).toEqual([])
   })
 })

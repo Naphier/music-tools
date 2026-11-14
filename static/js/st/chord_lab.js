@@ -1,4 +1,5 @@
 import {Chord, noteName, OCTAVE_SIZE, parseNote} from "st/music"
+import {matchesChordTones} from "st/chord_rules"
 import {STANDARD_TUNING} from "st/guitar_scales"
 
 const GUITAR_STRINGS = [...STANDARD_TUNING].reverse()
@@ -39,17 +40,20 @@ export function chordNote(pitch) {
     .replace(/\d+$/, "").replace("#", "♯").replaceAll("b", "♭")
 }
 
-export function identifyChords(pitches) {
+export function identifyChordMatches(pitches) {
   const classes = new Set(pitches.map(pitchClass))
   const bass = pitchClass(Math.min(...pitches))
-
-  return CHORDS.filter(chord =>
-    chord.classes.length === classes.size && chord.classes.every(note => classes.has(note))
-  ).sort((a, b) => Number(b.rootPitch === bass) - Number(a.rootPitch === bass))
-    .map(({name, rootPitch}) => {
+  return CHORDS.flatMap(chord => {
+    const match = matchesChordTones(classes, chord.classes, chord.rootPitch)
+    return match ? [{...chord, ...match}] : []
+  }).sort((a, b) => Number(a.omittedFifth) - Number(b.omittedFifth) || Number(b.rootPitch === bass) - Number(a.rootPitch === bass))
+    .map(({name, rootPitch, omittedFifth}) => {
       const symbol = name.replace("#", "♯").replaceAll("b", "♭")
-      return rootPitch === bass ? symbol : `${symbol}/${chordNote(bass)}`
+      return {name: rootPitch === bass ? symbol : `${symbol}/${chordNote(bass)}`, omittedFifth}
     })
+}
+export function identifyChords(pitches) {
+  return identifyChordMatches(pitches).map(match => match.name)
 }
 
 export function suggestChords(pitches, limit = 5) {

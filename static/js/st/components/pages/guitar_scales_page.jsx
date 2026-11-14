@@ -32,9 +32,8 @@ export default class GuitarScalesPage extends React.Component {
           <option value="notes">Notes</option><option value="degrees">Intervals</option><option value="both">Notes and intervals</option>
         </select></label>
       </div>
-      <p aria-live="polite"><strong>{displayNote(root)} {type.toLowerCase()}</strong> · {notes.map(note => `${displayNote(note.name)} (${note.interval})`).join(" · ")}</p>
-      {instrument === "piano" ? <PianoVisual tones={notes} labels={labels} /> : <GuitarFretboard tones={notes} labels={labels} />}
-      <p className={styles.hint}>Your settings are saved on this browser, without account sync.</p>
+      {instrument === "guitar" && <p aria-live="polite">{notes.map(note => `${displayNote(note.name)} (${note.interval})`).join(" · ")}</p>}
+      {instrument === "piano" ? <PianoVisual tones={notes} labels={labels} /> : <GuitarFretboard tones={notes} labels={labels} quiet />}
       <Toast message={this.state.storageWarning} onDismiss={() => this.setState({storageWarning: null})} />
     </main>
   }
