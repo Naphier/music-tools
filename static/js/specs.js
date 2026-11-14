@@ -28,3 +28,5 @@ import "./spec/chord_sheet_practice_spec"
 
 import "./spec/guitar_chords_spec"
 import "./spec/tool_usability_spec"
+
+import "./spec/chord_polish_spec"

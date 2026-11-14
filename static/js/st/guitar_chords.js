@@ -1,3 +1,4 @@
+import {matchesChordTones} from "st/chord_rules"
 // Frets and fingers are ordered from low E to high E. Null means muted.
 export const OPEN_PITCHES = [40, 45, 50, 55, 59, 64]
 export const STRING_NAMES = ["Low E", "A", "D", "G", "B", "High E"]
@@ -26,6 +27,13 @@ export function assignFingers(frets) {
   return fingers
 }
 const COMMON = [
+  // Familiar jazz grips, including shell voicings without the natural fifth.
+  [[null, 3, 2, 3, 1, null], [null, 3, 2, 4, 1, null]],
+  [[null, 3, 2, 0, 0, 0], [null, 3, 2, null, null, null]],
+  [[null, 3, 2, 3, 3, null], [null, 2, 1, 3, 3, null]],
+  [[null, 3, 2, 4, 3, null], [null, 2, 1, 4, 3, null]],
+  [[null, 3, 1, 3, 3, null], [null, 2, 1, 3, 4, null]],
+
   [[null, 3, 2, 0, 1, 0], [null, 3, 2, null, 1, null]],
   [[3, 2, 0, 0, 0, 3], [2, 1, null, null, null, 3]],
   [[null, null, 0, 2, 3, 2], [null, null, null, 1, 3, 2]],
@@ -37,6 +45,13 @@ const COMMON = [
 ]
 // Moveable E- and A-string forms with explicit barre fingering.
 const MOVEABLE = [
+  [[0, null, 0, 1, null, null], [1, null, 1, 2, null, null]],
+  [[0, null, 1, 1, null, null], [1, null, 2, 3, null, null]],
+  [[0, null, 0, 0, null, null], [1, null, 1, 1, null, null]],
+  [[0, null, 0, 1, null, 2], [1, null, 1, 2, null, 3]],
+  [[null, 0, 2, 1, 2, null], [null, 1, 3, 2, 4, null]],
+  [[null, 0, 2, 0, 1, null], [null, 1, 3, 1, 2, null]],
+
   [[0, 2, 2, 1, 0, 0], [1, 3, 4, 2, 1, 1]],
   [[0, 2, 2, 0, 0, 0], [1, 3, 4, 1, 1, 1]],
   [[0, 2, 0, 1, 0, 0], [1, 3, 1, 2, 1, 1]],
@@ -59,11 +74,12 @@ export function guitarChordVoicings(notes, limit = 4, bassNote = notes[0]) {
   const add = (frets, fingers, source = "Less common") => {
     const pitches = frets.flatMap((fret, index) => fret === null ? [] : [OPEN_PITCHES[index] + fret])
     const actual = new Set(pitches.map(pitch => pitch % 12))
-    if (actual.size !== classes.length || classes.some(pc => !actual.has(pc)) || Math.min(...pitches) % 12 !== bassClass) return
+    const match = matchesChordTones(actual, classes)
+    if (!match || Math.min(...pitches) % 12 !== bassClass) return
     const signature = frets.join(",")
     if (seen.has(signature)) return
     seen.add(signature)
-    candidates.push({frets, fingers, category: frets.every(fret => fret !== 0) ? "Moveable" : source, score: Math.max(...frets.map(f => f ?? 0)) * 2 + frets.filter(f => f === null).length})
+    candidates.push({frets, fingers, ...match, category: source === "Common" ? source : frets.every(fret => fret !== 0) ? "Moveable" : source, score: Math.max(...frets.map(f => f ?? 0)) * 2 + frets.filter(f => f === null).length})
   }
   COMMON.forEach(([frets, fingers]) => add(frets, fingers, "Common"))
   // Familiar open shapes are offered before moveable and generated forms.
@@ -72,12 +88,12 @@ export function guitarChordVoicings(notes, limit = 4, bassNote = notes[0]) {
     for (let shift = 0; shift <= 10; shift++) {
       const frets = shape.map(fret => fret === null ? null : fret + shift)
       if (Math.max(...frets) > 12) continue
-      add(frets, shift ? fingers : assignFingers(frets), "Common")
+      add(frets, shift ? fingers : assignFingers(frets), shift ? "Moveable" : "Common")
     }
   }
   const curated = candidates.length
   // Four-fret windows with at most four fingers, including explicit barres.
-  // Every chord tone is required; no implicit omissions or extra notes.
+  // Only an explicitly optional natural fifth may be omitted; no extra tones.
   for (let start = 1; start <= 9; start++) {
     const choices = OPEN_PITCHES.map(open => [null, ...[0, start, start + 1, start + 2, start + 3]
       .filter(fret => classes.includes((open + fret) % 12))])

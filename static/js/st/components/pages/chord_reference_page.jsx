@@ -40,6 +40,9 @@ export default class ChordReferencePage extends React.Component {
         onChange={event => this.setState({family: event.target.value, query: `${this.state.root} ${event.target.value}`, visible: 24})}>
         {CHORD_FAMILIES.map(family => <option key={family}>{family}</option>)}
       </select></label>
+      <label>Diagram labels<select value={this.state.diagramLabels} onChange={event => this.setState({diagramLabels: event.target.value})}>
+        <option value="fingers">Fingers</option><option value="notes">Notes</option><option value="intervals">Intervals</option><option value="both">Notes and intervals</option>
+      </select></label>
       <label htmlFor="chord-query">Search chords</label>
       <input id="chord-query" type="search" value={query} maxLength={80}
         aria-describedby="chord-query-help" autoComplete="off"
@@ -59,7 +62,7 @@ export default class ChordReferencePage extends React.Component {
         {results.slice(0, this.state.visible).map(({symbol, quality, formula, notes, descriptors}) => {
           return <li key={symbol}>
           <h2>{symbol}</h2>
-          <ChordVoicings notes={notes} name={symbol} linkToLab />
+          <ChordVoicings notes={notes} name={symbol} labels={this.state.diagramLabels} linkToLab />
           <p>{quality}</p>
           <dl>
             <dt>Notes</dt><dd>{notes.join(" · ")}</dd>
@@ -69,9 +72,7 @@ export default class ChordReferencePage extends React.Component {
         </li>})}
       </ul>}
       {results.length > this.state.visible && <button type="button" onClick={() => this.setState({visible: this.state.visible + 24})}>Show more chords</button>}
-      <p className={styles.legend}>Diagrams: low E at left, high e at right. ○ open · × muted · 1–4 fingers, index to little finger. Repeated numbers indicate a barre.</p>
       </section></div>
-      <p className={styles.legend}>Search and browsing choices are saved on this browser, without account sync.</p>
       <Toast message={this.state.storageWarning} onDismiss={() => this.setState({storageWarning: null})} />
       <p>Have a guitar fingering or piano notes? <Link to="/chord-lab">Identify a chord in Chord Lab</Link>.</p>
     </main>

@@ -15,7 +15,6 @@ export default function ToolOptions({children}) {
     {open && <Lightbox className={styles.flyout} ariaLabelledby="tool-options-title" onClose={() => setOpen(false)}>
       <div className={styles.heading}><h2 id="tool-options-title">Options</h2><button type="button" onClick={() => setOpen(false)} aria-label="Close options">×</button></div>
       <div className={styles.controls}>{children}</div>
-      <p className={styles.hint}>Settings and selections are saved on this browser. They do not sync between devices. Live MIDI notes are not saved.</p>
     </Lightbox>}
   </>
 }

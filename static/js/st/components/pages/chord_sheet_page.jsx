@@ -23,12 +23,12 @@ export default class ChordSheetPage extends React.Component {
     try {
       sheets = readSongbook(localStorage)
     } catch {
-      notice = "Could not load saved sheets from this browser."
+      notice = "Could not load saved sheets."
     }
     let draft
     try {
       draft = readEditorDraft(localStorage, sheets)
-      if (draft) notice = notice || "Restored your last editor draft from this browser."
+      if (draft) notice = notice || "Restored your last editor draft."
     } catch {
       notice = notice || "Could not recover the last editor draft. Saved sheets are still available if they loaded successfully."
     }
@@ -127,7 +127,7 @@ export default class ChordSheetPage extends React.Component {
         : [sheet, ...sheets]
       localStorage.setItem(SONGBOOK_STORAGE_KEY, JSON.stringify(updated))
       this.setState({sheets: updated, activeId: id})
-      this.notify("Sheet saved in this browser.")
+      this.notify("Sheet saved.")
     } catch {
       this.notify("Could not save the sheet in this browser.")
     }

@@ -188,3 +188,20 @@ not restored. Corrupt settings fall back to defaults; denied writes show a
 transient warning and retry on the next change.
 
 See the [review checklist](docs/review/scales-chord-usability.md) for manual acceptance.
+
+
+### Compact chord browsing and diagram export
+
+Chord Lab presents match/suggestion tabs with note letters and shows the selected
+chord's returned voicings without foldouts. Piano mode keeps the guitar diagrams
+hidden. Reference and Lab share Notes, Fingers, Intervals, and Notes and intervals
+diagram options. Each diagram has a Copy as menu for five-fret ASCII blocks or
+single-line tabs such as `C = x-3-2-0-1-0`; wide user-entered shapes export as
+consecutive five-fret blocks. Clipboard failures can be retried.
+
+Jazz sixth, seventh, and extended chords may omit their natural fifth while
+retaining the root, defining third, and other extensions. Such matches and shapes
+are marked `no 5`. Ordinary triads and altered fifths still require all tones.
+Common grips now include C7 `x-3-2-3-1-x` and major/minor seventh/ninth shells.
+
+See the [completed task list and remaining manual checks](docs/review/chord-ui-task-list.md).

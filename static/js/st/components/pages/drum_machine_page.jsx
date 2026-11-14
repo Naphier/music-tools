@@ -265,7 +265,7 @@ export default class DrumMachinePage extends React.Component {
       return fail("You can save up to 100 patterns. Delete one to make room.")
     }
     const saved = [...this.state.saved.filter(item => item.name !== name), {name, pattern: validatePattern(pattern)}]
-    return this.persist(saved, `Saved “${name}” on this browser.`, {selectedName: name, name, ...state})
+    return this.persist(saved, `Saved “${name}”.`, {selectedName: name, name, ...state})
   }
 
   deleteSelected() {
@@ -310,7 +310,6 @@ export default class DrumMachinePage extends React.Component {
             <button type="button" className={styles.iconButton} aria-label="New pattern" title="Save current beat as a new pattern" onClick={() => this.newPattern()}><DrumIcon name="plus" /></button>
             <button type="button" className={styles.iconButton} aria-label="Delete saved pattern" title="Delete selected saved pattern" disabled={!selectedName} onClick={() => this.deleteSelected()}><DrumIcon name="trash" /></button>
           </div>
-          <small>Patterns are saved in this browser.</small>
         </section>
       </header>
       <Toast message={message} notificationId={notificationId} onDismiss={() => this.setState({message: ""})} />
