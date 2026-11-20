@@ -142,6 +142,10 @@ export default class Header extends React.Component {
       <Link to="/" className={styles.logo_link}>
         <span className={styles.wordmark}>Napland <span>Music Tools</span></span>
       </Link>
+      <a className={styles.support_link} href="https://buymeacoffee.com/naphier"
+        target="_blank" rel="noopener noreferrer" aria-label="Buy me a coffee" title="Buy me a coffee">
+        <ActionIcon name="coffee" size={22} />
+      </a>
     </header>
   }
 }

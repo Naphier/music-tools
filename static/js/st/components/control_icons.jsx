@@ -32,6 +32,7 @@ export function ActionIcon({name, size = 20}) {
   const paths = {
     help: <><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17v.5"/></>,
     feedback: <><path d="M21 11a8 8 0 0 1-8 8H8l-5 3V5a2 2 0 0 1 2-2h8a8 8 0 0 1 8 8Z"/><path d="M7 8h9M7 12h6"/></>,
+    coffee: <path d="M3 8h14v5a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8ZM17 9h2a2.5 2.5 0 0 1 0 5h-2M3 21h15M8 3v2M12 3v2"/>,
     stats: <><path d="M4 3v17h17M8 15v-4M13 15V6M18 15v-7"/></>,
     save: <><path d="M5 3h12l4 4v14H3V3h2Z"/><path d="M7 3v6h9V3M7 21v-8h10v8"/></>,
     trash: <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>,
