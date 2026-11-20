@@ -13,7 +13,8 @@
     border-bottom: 1px solid var(--border-color);
     z-index: calc(var(--upper-layer-z-index) - 1);
 }
-.menu_toggle {
+.menu_toggle,
+.support_link {
     display: grid;
     place-items: center;
     min-width: 40px;
@@ -25,6 +26,15 @@
     box-shadow: none;
     border-radius: 8px;
     cursor: pointer;
+}
+.support_link {
+    box-sizing: border-box;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    margin-inline-start: -8px;
+    text-decoration: none;
+    &:hover { background: var(--surface-muted); }
 }
 .logo_link { text-decoration: none; }
 .wordmark {
